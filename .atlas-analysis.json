@@ -1,0 +1,161 @@
+{
+  "projectType": "saas",
+  "projectName": "omegaUp",
+  "projectDescription": "A free educational platform for competitive programming and algorithm learning, serving tens of thousands of students and teachers across Latin America.",
+  "theme": "aspen",
+  "primaryColor": "#5588dd",
+  "lightColor": "#8bb0d3",
+  "darkColor": "#466aaf",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Platform",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "features"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/problems",
+              "features/contests",
+              "features/courses",
+              "features/arena",
+              "features/grading-system"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": [
+              "guides/creating-problems",
+              "guides/running-contests",
+              "guides/managing-courses",
+              "guides/badges-certificates"
+            ]
+          },
+          {
+            "group": "Architecture",
+            "pages": [
+              "architecture/overview",
+              "architecture/components",
+              "architecture/grader",
+              "architecture/database"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "development/setup",
+              "development/docker-environment",
+              "development/running-tests"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "development/contributing",
+              "development/pull-requests",
+              "development/issue-workflow",
+              "development/coding-guidelines"
+            ]
+          },
+          {
+            "group": "Frontend",
+            "pages": [
+              "development/frontend/overview",
+              "development/frontend/vue-components",
+              "development/frontend/typescript",
+              "development/frontend/storybook"
+            ]
+          },
+          {
+            "group": "Backend",
+            "pages": [
+              "development/backend/controllers",
+              "development/backend/dao",
+              "development/backend/business-logic"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/introduction",
+              "api/authentication",
+              "api/response-format"
+            ]
+          },
+          {
+            "group": "Core APIs",
+            "pages": [
+              "api/contest",
+              "api/course",
+              "api/problem",
+              "api/run",
+              "api/user"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "api/clarification",
+              "api/badge",
+              "api/certificate",
+              "api/group",
+              "api/scoreboard"
+            ]
+          },
+          {
+            "group": "Administration",
+            "pages": [
+              "api/admin",
+              "api/authorization",
+              "api/identity"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Problem creation and management with automated grading",
+    "Contest organization with real-time scoreboards",
+    "Course management for structured learning paths",
+    "Interactive coding arena with multiple language support",
+    "Automated code evaluation using secure sandboxed runners",
+    "Badge and certificate system for achievements",
+    "Group management for schools and institutions",
+    "Clarifications system for contest communication",
+    "Quality nomination and review system for problems",
+    "Admin tools for platform management"
+  ],
+  "publicApiSurface": [
+    "/api/contest/* - Contest creation, management, and participation",
+    "/api/course/* - Course creation and student enrollment",
+    "/api/problem/* - Problem submission and management",
+    "/api/run/* - Code submission and grading",
+    "/api/user/* - User authentication and profile management",
+    "/api/clarification/* - Contest clarifications",
+    "/api/badge/* - Achievement badges",
+    "/api/certificate/* - Certificate generation and validation",
+    "/api/group/* - Group and school management",
+    "/api/scoreboard/* - Contest and group scoreboards",
+    "/api/admin/* - Platform administration",
+    "/api/identity/* - User identity management",
+    "/api/authorization/* - Access control and permissions"
+  ]
+}
