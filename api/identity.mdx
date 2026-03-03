@@ -1,0 +1,299 @@
+---
+title: Identity Management API
+description: Create, update, and manage user identities within groups and teams
+---
+
+## Overview
+
+The Identity API provides endpoints for creating and managing identities within omegaUp. Identities are user accounts that can be associated with groups or teams. This API is commonly used by group owners and administrators to manage participants.
+
+<Info>
+Most identity management endpoints require **Group Identity Creator** permissions. Only authorized users can create or modify identities within their groups.
+</Info>
+
+## Create Identity
+
+Create a new identity within a group.
+
+**Endpoint:** `POST /api/identity/create/`
+
+**Permissions:** Group owner or identity creator
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group where the identity will be created
+</ParamField>
+
+<ParamField path="username" type="string" required>
+  Username for the new identity. Format: `group_alias:username`
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Full name of the identity
+</ParamField>
+
+<ParamField path="password" type="string" required>
+  Password for the identity. Must meet strong password requirements.
+</ParamField>
+
+<ParamField path="gender" type="string" required>
+  Gender of the identity. Allowed values: `male`, `female`, `other`, `decline`
+</ParamField>
+
+<ParamField path="school_name" type="string" required>
+  Name of the school associated with this identity
+</ParamField>
+
+<ParamField path="country_id" type="string" optional>
+  ISO country code (e.g., `MX`, `US`)
+</ParamField>
+
+<ParamField path="state_id" type="string" optional>
+  State/region identifier within the country
+</ParamField>
+
+### Response
+
+<ResponseField name="username" type="string">
+  The created username
+</ResponseField>
+
+## Bulk Create Identities
+
+Create multiple identities at once within a group.
+
+**Endpoint:** `POST /api/identity/bulkCreate/`
+
+**Permissions:** Group owner or identity creator
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group where identities will be created
+</ParamField>
+
+<ParamField path="identities" type="string" required>
+  JSON-encoded array of identity objects. Each object should contain:
+  - `username` (string, required)
+  - `name` (string, required)
+  - `password` (string, required)
+  - `gender` (string, required)
+  - `school_name` (string, required)
+  - `country_id` (string, optional)
+  - `state_id` (string, optional)
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns `"ok"` on success
+</ResponseField>
+
+### Example
+
+```json
+{
+  "group_alias": "my-school",
+  "identities": "[{\"username\":\"my-school:student1\",\"name\":\"John Doe\",\"password\":\"SecurePass123!\",\"gender\":\"male\",\"school_name\":\"Example School\",\"country_id\":\"MX\"}]"
+}
+```
+
+<Warning>
+Duplicate usernames within the same request will cause a `DuplicatedEntryInArrayException`. The first 20 duplicates will be displayed in the error message.
+</Warning>
+
+## Bulk Create for Teams
+
+Create team identities with optional member associations.
+
+**Endpoint:** `POST /api/identity/bulkCreateForTeams/`
+
+**Permissions:** Group identity creator
+
+### Parameters
+
+<ParamField path="team_group_alias" type="string" required>
+  Alias of the team group
+</ParamField>
+
+<ParamField path="team_identities" type="string" required>
+  JSON-encoded array of team identity objects. Each object should contain:
+  - `username` (string, required) - Format: `teams:team_group_alias:teamname`
+  - `name` (string, required)
+  - `password` (string, required)
+  - `gender` (string, required)
+  - `school_name` (string, required)
+  - `country_id` (string, optional)
+  - `state_id` (string, optional)
+  - `usernames` (string, optional) - JSON array of team member usernames
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns `"ok"` on success
+</ResponseField>
+
+<Note>
+Team member count cannot exceed the `number_of_contestants` limit defined for the team group.
+</Note>
+
+## Update Identity
+
+Update an existing identity's information.
+
+**Endpoint:** `POST /api/identity/update/`
+
+**Permissions:** Group owner or identity creator
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group containing the identity
+</ParamField>
+
+<ParamField path="original_username" type="string" required>
+  Current username of the identity
+</ParamField>
+
+<ParamField path="username" type="string" required>
+  New username for the identity
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Updated full name
+</ParamField>
+
+<ParamField path="gender" type="string" required>
+  Updated gender
+</ParamField>
+
+<ParamField path="school_name" type="string" required>
+  Updated school name
+</ParamField>
+
+<ParamField path="country_id" type="string" optional>
+  Updated country code
+</ParamField>
+
+<ParamField path="state_id" type="string" optional>
+  Updated state identifier
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns `"ok"` on success
+</ResponseField>
+
+## Update Identity Team
+
+Update a team identity's information.
+
+**Endpoint:** `POST /api/identity/updateIdentityTeam/`
+
+**Permissions:** Group owner or identity creator
+
+### Parameters
+
+Same as Update Identity, but the username must follow the team format: `teams:team_group_alias:teamname`
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns `"ok"` on success
+</ResponseField>
+
+## Change Password
+
+Change the password of an identity.
+
+**Endpoint:** `POST /api/identity/changePassword/`
+
+**Permissions:** Group owner or identity creator
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group containing the identity
+</ParamField>
+
+<ParamField path="username" type="string" required>
+  Username of the identity
+</ParamField>
+
+<ParamField path="password" type="string" required>
+  New password. Must meet strong password requirements.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns `"ok"` on success
+</ResponseField>
+
+## Select Identity
+
+Switch between associated identities for a user.
+
+**Endpoint:** `POST /api/identity/selectIdentity/`
+
+**Permissions:** Authenticated user
+
+### Parameters
+
+<ParamField path="usernameOrEmail" type="string" required>
+  Username, team username, or email of the identity to switch to
+</ParamField>
+
+<ParamField path="auth_token" type="string" optional>
+  Authentication token
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns `"ok"` on success. The session is updated to use the selected identity.
+</ResponseField>
+
+## Helper Methods
+
+### Resolve Identity
+
+The API provides a helper method `resolveIdentity()` that accepts either a username or email and returns the corresponding identity object. This is used internally by most endpoints.
+
+### Test Password
+
+The `testPassword()` method validates a password against an identity's stored hash. It handles special cases:
+- Throws `LoginDisabledException` with `"loginThroughThirdParty"` if the user logged in via OAuth
+- Throws `LoginDisabledException` with `"loginDisabled"` if the password is empty
+
+## Username Formats
+
+### Group Identities
+Format: `group_alias:username`
+
+Example: `my-school:student123`
+
+### Team Identities
+Format: `teams:team_group_alias:teamname`
+
+Example: `teams:omegaup-teams:warriors`
+
+## Validation Rules
+
+- **Passwords:** Must pass strong password requirements (implemented in `SecurityTools::testStrongPassword()`)
+- **Usernames:** Must be valid according to identity validators
+- **Name:** 1-50 characters
+- **Gender:** Must be one of: `male`, `female`, `other`, `decline`
+- **School name:** 1-128 characters
+- **State:** Must belong to the specified country if both are provided
+
+## Notes
+
+- All create/update operations are wrapped in database transactions
+- School records are created or reused automatically
+- Identity profiles are cached and invalidated on updates
+- Users must be over 13 years old to create team identities
+- Duplicate usernames in bulk operations are detected before database insertion

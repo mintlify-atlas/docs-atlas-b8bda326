@@ -1,0 +1,350 @@
+---
+title: Running Contests at Your School
+description: Technical requirements and best practices for hosting omegaUp contests
+---
+
+## Overview
+
+This guide covers the technical requirements and best practices for running programming contests at your school using omegaUp.
+
+## Network Requirements
+
+Ensure the following domains are accessible from contestant machines.
+
+### Required Domains
+
+<AccordionGroup>
+  <Accordion title="omegaUp Platform Access" icon="globe">
+    Choose **one** of these based on your contest mode:
+    
+    **Lockdown Mode (Recommended for Formal Contests):**
+    ```
+    https://arena.omegaup.com
+    ```
+    
+    **Normal Mode:**
+    ```
+    https://omegaup.com
+    ```
+    
+    <Warning>
+      If using lockdown mode, you must block access to the other domain, otherwise lockdown will not work properly.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Analytics" icon="chart-line">
+    Required for platform functionality:
+    ```
+    https://ssl.google-analytics.com
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Optional Domains
+
+These enhance user experience but are not required:
+
+| Domain | Purpose |
+|--------|--------|
+| `https://secure.gravatar.com` | User avatars in top-right corner |
+| `https://accounts.google.com` | Google login support |
+
+### Port Configuration
+
+<Note>
+  All connections use **HTTPS on port 443**. Port 80 connections will not work as they are automatically redirected to HTTPS.
+</Note>
+
+### Firewall Settings
+
+<Warning>
+  Configure your firewall to use **DENY** instead of **DROP**.
+  
+  If using DROP, browsers will wait 20-30 seconds for timeout when accessing blocked domains, causing slow page loads.
+</Warning>
+
+## Contest Modes
+
+### Normal Mode
+
+Access via [https://omegaup.com](https://omegaup.com)
+
+<Check>
+  **Features available:**
+  - Full platform functionality
+  - Admin mode
+  - Practice mode
+  - View past submissions' source code
+  - All standard features
+</Check>
+
+**Best for:**
+- Practice sessions
+- Informal competitions
+- Learning environments
+- When you need full platform access
+
+### Lockdown Mode
+
+Access via [https://arena.omegaup.com](https://arena.omegaup.com)
+
+<Info>
+  Lockdown mode provides stronger guarantees that students cannot exchange information through the platform.
+</Info>
+
+<Steps>
+  <Step title="Understanding lockdown restrictions">
+    Much of the site's functionality is restricted to maintain contest integrity:
+    
+    **Disabled features:**
+    - Admin mode
+    - Practice mode
+    - Viewing past submissions' source code
+    - Other communication features
+  </Step>
+
+  <Step title="Evaluate your needs">
+    <Warning>
+      No exceptions can be made to lockdown restrictions. If you need any blocked feature, use normal mode instead.
+    </Warning>
+  </Step>
+
+  <Step title="Configure network">
+    Block access to `https://omegaup.com` and only allow `https://arena.omegaup.com`
+  </Step>
+</Steps>
+
+**Best for:**
+- Official competitions
+- Graded assessments
+- Certification contests
+- High-stakes evaluations
+
+## Operating System Recommendations
+
+### Linux (Recommended)
+
+<Check>
+  **Ubuntu 14.04 or later** provides 100% compatibility with omegaUp's evaluation environment.
+  
+  Any relatively recent Linux distribution works perfectly.
+</Check>
+
+### Windows (Not Recommended)
+
+<Warning>
+  Windows has known compatibility issues:
+  
+  - Uses `%I64d` instead of `%lld` for printing long long values
+  - Many Windows editors include `conio.h` header (doesn't exist in Linux)
+  - Submissions may fail on omegaUp even if they work locally
+</Warning>
+
+<Tip>
+  If students must use Windows, teach them to:
+  - Use `%lld` for long long integers
+  - Avoid Windows-specific headers like `conio.h`
+  - Test on a Linux environment before submitting
+</Tip>
+
+## Pre-Contest Checklist
+
+<Steps>
+  <Step title="Network testing">
+    Test connectivity to required domains from contestant machines:
+    
+    ```bash
+    # Test omegaUp access
+    curl -I https://arena.omegaup.com
+    
+    # Test analytics
+    curl -I https://ssl.google-analytics.com
+    ```
+    
+    Verify all requests complete successfully without timeouts.
+  </Step>
+
+  <Step title="Firewall configuration">
+    - Configure firewall to DENY (not DROP) blocked sites
+    - If using lockdown mode, block https://omegaup.com
+    - If using normal mode, ensure https://omegaup.com is accessible
+  </Step>
+
+  <Step title="Browser testing">
+    Open a test contest or practice problem on each machine to verify:
+    - Pages load quickly (< 5 seconds)
+    - Code editor works
+    - Submissions can be made
+    - No console errors
+  </Step>
+
+  <Step title="Account preparation">
+    Ensure all contestants have:
+    - Valid omegaUp accounts
+    - Verified email addresses (if required)
+    - Know their login credentials
+  </Step>
+
+  <Step title="For large contests (100+ participants)">
+    <Warning>
+      Contact omegaUp in advance for large contests!
+    </Warning>
+    
+    Email **hello@omegaup.com** with:
+    - Contest date and time
+    - Expected number of participants
+    - Contest duration
+    
+    This ensures adequate server capacity.
+  </Step>
+</Steps>
+
+## Contest Day Best Practices
+
+### Before Contest Starts
+
+<AccordionGroup>
+  <Accordion title="Student briefing" icon="users">
+    Explain to contestants:
+    - How to access the platform
+    - Contest rules and time limits
+    - How to submit solutions
+    - How to read clarifications
+    - What to do if they encounter technical issues
+  </Accordion>
+
+  <Accordion title="Technical check" icon="list-check">
+    Have students:
+    - Log in to their accounts
+    - Access the contest page
+    - Verify they can see all problems
+    - Test the code editor with a simple program
+  </Accordion>
+
+  <Accordion title="Clarification system" icon="comments">
+    Inform students:
+    - How to request clarifications
+    - Response time expectations
+    - Monitor the clarifications panel regularly
+  </Accordion>
+</AccordionGroup>
+
+### During Contest
+
+<Steps>
+  <Step title="Monitor the platform">
+    - Watch for clarification requests
+    - Check scoreboard for anomalies
+    - Monitor system performance
+  </Step>
+
+  <Step title="Handle technical issues">
+    - Keep contact with omegaUp support (hello@omegaup.com)
+    - Document any technical problems
+    - Have backup plans for network issues
+  </Step>
+
+  <Step title="Maintain contest integrity">
+    - Ensure no communication between contestants
+    - Monitor for suspicious activity
+    - In lockdown mode, verify no one accesses omegaup.com
+  </Step>
+</Steps>
+
+### After Contest
+
+<CardGroup cols={2}>
+  <Card title="Review Results" icon="chart-bar">
+    - Check scoreboard for final standings
+    - Review flagged submissions
+    - Verify grading is complete
+  </Card>
+  
+  <Card title="Feedback Collection" icon="message">
+    - Gather student feedback
+    - Document technical issues
+    - Note improvements for next time
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+### Slow Page Loading
+
+**Symptom:** Pages take 20-30 seconds to load
+
+**Cause:** Firewall using DROP instead of DENY
+
+**Solution:** Reconfigure firewall to use DENY for blocked domains
+
+### Lockdown Mode Not Working
+
+**Symptom:** Students can access features that should be blocked
+
+**Cause:** Both omegaup.com and arena.omegaup.com are accessible
+
+**Solution:** Block access to https://omegaup.com when using lockdown mode
+
+### Submissions Failing
+
+**Symptom:** Code that works locally fails on omegaUp
+
+**Cause:** Platform differences (Windows vs Linux)
+
+**Solution:** 
+- Use Linux-compatible code
+- Avoid Windows-specific features
+- Test on Linux before contest
+
+## Large Contest Considerations
+
+<Warning>
+  **For contests with 100+ participants:**
+  
+  Contact omegaUp at least **1 week in advance** at hello@omegaup.com
+</Warning>
+
+Provide:
+- **Date and time** of the contest
+- **Number of participants**
+- **Contest duration**
+- **Expected submission volume**
+- **Special requirements**
+
+This allows the omegaUp team to:
+- Allocate additional server resources
+- Monitor the contest in real-time
+- Provide priority support
+- Ensure optimal performance
+
+## Contact and Support
+
+For questions or assistance:
+
+<CardGroup cols={2}>
+  <Card title="General Support" icon="envelope">
+    Email: **hello@omegaup.com**
+  </Card>
+  
+  <Card title="Large Contest Planning" icon="calendar">
+    Email: **hello@omegaup.com**
+    
+    Include contest details and participant count
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Create Problems" icon="code" href="/guides/creating-problems">
+    Learn how to create problems for your contest
+  </Card>
+  
+  <Card title="Manage Courses" icon="graduation-cap" href="/guides/managing-courses">
+    Set up courses for ongoing learning
+  </Card>
+  
+  <Card title="Badges & Certificates" icon="award" href="/guides/badges-certificates">
+    Reward participants with badges and certificates
+  </Card>
+</CardGroup>

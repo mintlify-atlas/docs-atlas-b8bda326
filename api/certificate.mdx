@@ -1,0 +1,122 @@
+---
+title: Certificate API
+description: API endpoints for managing and validating certificates
+---
+
+## Overview
+
+The Certificate API allows users to generate contest certificates, retrieve certificate PDFs, validate certificates, and view their earned certificates.
+
+## Generate Contest Certificates
+
+Generates all certificates for a contest based on the contest scoreboard.
+
+**Endpoint:** `POST /api/certificate/generateContestCertificates`
+
+**Authentication:** Required - Must be a certificate generator and contest admin
+
+### Parameters
+
+<ParamField path="contest_alias" type="string" required>
+  Alias of the contest
+</ParamField>
+
+<ParamField path="certificates_cutoff" type="int">
+  Optional cutoff for certificate eligibility (e.g., top N participants)
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if certificates are queued for generation
+</ResponseField>
+
+### Notes
+
+- The contest must have ended before certificates can be generated
+- Certificates can only be generated if the contest status is "uninitiated" or "retryable_error"
+- The generation is queued and processed asynchronously via RabbitMQ
+
+## Get Certificate PDF
+
+Retrieves the PDF data for a certificate by verification code.
+
+**Endpoint:** `GET /api/certificate/getCertificatePdf`
+
+**Authentication:** Not required
+
+### Parameters
+
+<ParamField path="verification_code" type="string" required>
+  Unique verification code for the certificate
+</ParamField>
+
+### Response
+
+<ResponseField name="certificate" type="string|null">
+  Base64-encoded PDF data, or null if certificate not found
+</ResponseField>
+
+### Certificate Types
+
+The API supports the following certificate types:
+- **contest**: Contest participation or placement certificates
+- **course**: Course completion certificates
+- **coder_of_the_month**: Coder of the Month recognition
+- **coder_of_the_month_female**: Coder of the Month (Female category) recognition
+
+## Get User Certificates
+
+Returns all certificates belonging to a specific user.
+
+**Endpoint:** `GET /api/certificate/getUserCertificates`
+
+**Authentication:** Required - Must be the user or a system admin
+
+### Parameters
+
+<ParamField path="user_id" type="int" required>
+  ID of the user
+</ParamField>
+
+### Response
+
+<ResponseField name="certificates" type="array">
+  Array of certificate objects
+  
+  <ResponseField name="certificate_type" type="string">
+    Type of certificate (contest, course, coder_of_the_month, etc.)
+  </ResponseField>
+  
+  <ResponseField name="name" type="string|null">
+    Name of the contest/course
+  </ResponseField>
+  
+  <ResponseField name="verification_code" type="string">
+    Unique verification code for the certificate
+  </ResponseField>
+  
+  <ResponseField name="date" type="timestamp">
+    Date the certificate was issued
+  </ResponseField>
+</ResponseField>
+
+## Validate Certificate
+
+Validates whether a certificate verification code is valid.
+
+**Endpoint:** `GET /api/certificate/validateCertificate`
+
+**Authentication:** Not required
+
+### Parameters
+
+<ParamField path="verification_code" type="string" required>
+  Verification code to validate
+</ParamField>
+
+### Response
+
+<ResponseField name="valid" type="bool">
+  Whether the verification code corresponds to a valid certificate
+</ResponseField>

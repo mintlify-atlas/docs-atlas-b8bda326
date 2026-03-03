@@ -1,0 +1,225 @@
+---
+title: Docker Environment
+description: Working with the omegaUp Docker development environment
+---
+
+## Docker Commands
+
+### Starting the Environment
+
+After the initial setup, you can start the environment without rebuilding:
+
+```bash
+docker compose up --no-build
+```
+
+This is much faster than the initial `docker compose up` command.
+
+### Accessing the Container
+
+To open a console inside the running container:
+
+```bash
+docker exec -it omegaup-frontend-1 /bin/bash
+```
+
+Once inside, the omegaUp code is located at `/opt/omegaup`.
+
+### Rebuilding Containers
+
+If you encounter issues after pulling changes (e.g., Node.js version mismatch or `yarn install` failures):
+
+```bash
+docker compose build frontend
+docker compose up
+```
+
+## Prerequisites
+
+### Docker Engine
+
+Install the [Docker engine](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) for your platform.
+
+### Docker Compose
+
+<Tabs>
+  <Tab title="Docker Compose 2 (Recommended)">
+    Install [Docker Compose 2](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually) as a Docker plugin.
+  </Tab>
+  <Tab title="Migrating from v1">
+    If you have Docker Compose 1 installed, follow the [migration instructions](https://docs.docker.com/compose/install/linux/#install-using-the-repository).
+  </Tab>
+  <Tab title="WSL">
+    For Windows Subsystem for Linux, follow the [official Docker Desktop WSL setup guide](https://docs.docker.com/desktop/features/wsl).
+  </Tab>
+</Tabs>
+
+### Linux User Permissions
+
+On Linux systems, add your user to the docker group:
+
+```bash
+sudo usermod -a -G docker $USER
+```
+
+<Warning>
+You must log out and log back in after running this command for the changes to take effect.
+</Warning>
+
+## Initial Setup
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone --recurse-submodules https://github.com/YOURUSERNAME/omegaup
+    cd omegaup
+    ```
+  </Step>
+
+  <Step title="Initialize submodules">
+    If not using `--recurse-submodules` during clone:
+    
+    ```bash
+    git submodule update --init --recursive
+    ```
+  </Step>
+
+  <Step title="Pull and start containers">
+    ```bash
+    docker-compose pull
+    docker-compose up
+    ```
+    
+    Wait 2-10 minutes for the initial build to complete.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Changes Not Showing
+
+If your code changes aren't reflected in the web app, ensure Docker is running:
+
+```bash
+docker compose up --no-build
+```
+
+If problems persist, ask for help in omegaUp's communication channels.
+
+### HTTP to HTTPS Redirect
+
+If your browser keeps changing `http` to `https`, disable security policies for localhost. [See this guide](https://hmheng.medium.com/exclude-localhost-from-chrome-chromium-browsers-forced-https-redirection-642c8befa9b).
+
+### MySQL Client Not Installed
+
+If you see this error when pushing changes:
+
+```
+FileNotFoundError: [Errno 2] No such file or directory: '/usr/bin/mysql'
+error: failed to push some refs to 'https://github.com/user/omegaup'
+```
+
+Install the MySQL client **outside the container**:
+
+```bash
+sudo apt-get install mysql-client
+```
+
+### MySQL Connection Error
+
+If you see this error:
+
+```
+ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)
+```
+
+Configure MySQL to connect to the Docker container by running **outside the container**:
+
+```bash
+cat > ~/.mysql.docker.cnf <<EOF
+[client]
+port=13306
+host=127.0.0.1
+protocol=tcp
+user=root
+password=omegaup
+EOF
+ln -sf ~/.mysql.docker.cnf .my.cnf
+```
+
+### Node.js Version Mismatch
+
+If you encounter Node.js or `yarn install` errors after pulling updates:
+
+```bash
+docker compose build frontend
+docker compose up
+```
+
+### Permission Denied Errors
+
+#### Symptoms
+
+During startup, you see repeated errors:
+
+```
+mkdir: cannot create directory '/opt/omegaup/frontend/www/phpminiadmin': Permission denied
+Error: [Errno 1] Operation not permitted: '/opt/omegaup/stuff/venv/bin/activate.fish'
+exited: developer-environment (exit status 1; not expected)
+```
+
+The container restarts continuously and omegaUp never becomes available.
+
+#### Cause
+
+The repository was cloned or executed as the **root user** or the project directory is owned by `root`. Docker bind mounts map your local directory to `/opt/omegaup` inside the container. If owned by root, the container cannot create required files.
+
+#### Fix: Clean Setup
+
+<Warning>
+Do **not** try to repair a root-owned folder. Delete it and re-clone properly.
+</Warning>
+
+<Steps>
+  <Step title="Delete the incorrect clone">
+    Run as root:
+    
+    ```bash
+    rm -rf /root/omegaup
+    rm -rf /root/<any-folder-containing-omegaup>
+    ```
+  </Step>
+
+  <Step title="Create a normal user">
+    ```bash
+    adduser <your-username>
+    usermod -aG sudo,docker <your-username>
+    su - <your-username>
+    ```
+  </Step>
+
+  <Step title="Clone as the normal user">
+    ```bash
+    mkdir -p ~/workspace
+    cd ~/workspace
+    git clone --recurse-submodules https://github.com/YOURUSERNAME/omegaup
+    cd omegaup
+    ```
+  </Step>
+
+  <Step title="Start the environment">
+    ```bash
+    docker compose up
+    ```
+  </Step>
+</Steps>
+
+#### Prevention
+
+- Do not run `git clone` with `sudo`
+- Do not run `docker compose` as `root`
+- Always work from a normal user's home directory (e.g., `/home/username/...`)
+
+### Other Issues
+
+If you encounter problems not covered here, please file an issue at [https://github.com/omegaup/deploy/issues](https://github.com/omegaup/deploy/issues) with your reproduction steps and error message.

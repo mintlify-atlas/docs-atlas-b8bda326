@@ -1,0 +1,635 @@
+---
+title: Vue Component Development
+description: Guide to developing Vue.js components in omegaUp
+---
+
+# Vue Component Development
+
+omegaUp uses Vue.js 2.7.16 with TypeScript for building reactive user interface components. This guide covers component structure, patterns, and best practices.
+
+## Component Structure
+
+Vue components in omegaUp are Single File Components (`.vue` files) with three sections:
+
+```vue
+<template>
+  <!-- HTML template with Vue directives -->
+</template>
+
+<script lang="ts">
+// TypeScript component logic
+</script>
+
+<style lang="scss" scoped>
+/* Component-specific styles */
+</style>
+```
+
+## Component Architecture
+
+### Using vue-property-decorator
+
+omegaUp uses `vue-property-decorator` for class-based component syntax:
+
+```typescript
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+
+@Component({
+  components: {
+    'child-component': ChildComponent,
+  },
+})
+export default class MyComponent extends Vue {
+  // Props
+  @Prop() username!: string;
+  @Prop({ default: false }) isActive!: boolean;
+  
+  // Data
+  private counter = 0;
+  
+  // Computed properties
+  get displayName(): string {
+    return `User: ${this.username}`;
+  }
+  
+  // Methods
+  handleClick(): void {
+    this.$emit('click', this.username);
+  }
+  
+  // Watchers
+  @Watch('username')
+  onUsernameChange(newValue: string): void {
+    console.log('Username changed:', newValue);
+  }
+}
+```
+
+### Key Decorators
+
+- **`@Component`**: Defines a Vue component class
+- **`@Prop()`**: Declares component props with optional configuration
+- **`@Watch()`**: Watches for changes on a property
+- **`@Emit()`**: Emits events (optional, can use `this.$emit()`)
+
+## Real Component Examples
+
+### Simple Component: Username Display
+
+Location: `frontend/www/js/omegaup/components/user/Username.vue`
+
+```vue
+<template>
+  <span :class="classname" :title="username">
+    <omegaup-countryflag
+      v-if="country != null"
+      :country="country"
+    ></omegaup-countryflag>
+
+    <template v-if="linkify">
+      <a
+        v-if="emitClickEvent"
+        :href="href"
+        :class="classname"
+        @click="$emit('click', username)"
+      >{{ nameWithUsername }}</a>
+      <a
+        v-else
+        :href="`/profile/${username}/`"
+      >{{ nameWithUsername }}</a>
+    </template>
+    <template v-else>
+      {{ nameWithUsername }}
+    </template>
+  </span>
+</template>
+
+<script lang="ts">
+import { Vue, Component, Prop } from 'vue-property-decorator';
+import CountryFlag from '../CountryFlag.vue';
+
+@Component({
+  components: {
+    'omegaup-countryflag': CountryFlag,
+  },
+})
+export default class Username extends Vue {
+  @Prop() username!: string;
+  @Prop({ default: null }) name!: string;
+  @Prop() classname!: string;
+  @Prop() linkify!: boolean;
+  @Prop({ default: '#' }) href!: string;
+  @Prop() country!: string;
+  @Prop({ default: false }) emitClickEvent!: boolean;
+
+  get nameWithUsername(): string {
+    if (this.name) {
+      return `${this.name} (${this.username})`;
+    }
+    return this.username;
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+span {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.user-rank-beginner {
+  color: var(--user-rank-beginner-font-color);
+  font-weight: bold;
+}
+</style>
+```
+
+**Key features:**
+- Props with defaults
+- Computed property for name formatting
+- Conditional rendering with `v-if`
+- Event emission on click
+- Child component integration
+- Scoped styling with CSS variables
+
+### Complex Component: Problem Tags
+
+Location: `frontend/www/js/omegaup/components/problem/Tags.vue`
+
+```vue
+<template>
+  <div class="card">
+    <div class="card-body">
+      <!-- Public Tags Section -->
+      <div class="form-group">
+        <label class="font-weight-bold">{{ T.wordsPublicTags }}</label>
+        <vue-typeahead-bootstrap
+          v-if="canAddNewTags"
+          v-model="newPublicTag"
+          :data="publicTags"
+          :serializer="publicTagsSerializer"
+          :auto-close="true"
+          @hit="addPublicTag"
+        ></vue-typeahead-bootstrap>
+      </div>
+      
+      <!-- Tags Table -->
+      <table class="table table-striped">
+        <tbody>
+          <tr v-for="tag in selectedPublicTags" :key="tag">
+            <td class="align-middle">
+              <a :href="`/problem/?tag[]=${tag}`">
+                {{ Object.prototype.hasOwnProperty.call(T, tag) ? T[tag] : tag }}
+              </a>
+            </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="btn btn-danger"
+                :disabled="selectedPublicTags.length < 2 && !isLecture"
+                @click="removeTag(tag, true)"
+              >
+                <font-awesome-icon :icon="['fas', 'trash']" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <!-- Level Tag Selector -->
+      <div class="form-group">
+        <label class="font-weight-bold">{{ T.wordsLevel }}</label>
+        <select
+          v-model="problemLevelTag"
+          class="form-control"
+          @change="onSelectProblemLevel"
+        >
+          <option v-for="levelTag in levelTags" :key="levelTag" :value="levelTag">
+            {{ T[levelTag] }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import T from '../../lang';
+import VueTypeaheadBootstrap from 'vue-typeahead-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
+
+library.add(faTrash);
+
+@Component({
+  components: {
+    FontAwesomeIcon,
+    VueTypeaheadBootstrap,
+  },
+})
+export default class ProblemTags extends Vue {
+  @Prop({ default: null }) problemLevel!: string | null;
+  @Prop() publicTags!: string[];
+  @Prop() selectedPublicTags!: string[];
+  @Prop() selectedPrivateTags!: string[];
+  @Prop() levelTags!: string[];
+  @Prop() alias!: string;
+  @Prop({ default: '' }) title!: string;
+  @Prop({ default: true }) initialAllowTags!: boolean;
+  @Prop({ default: false }) canAddNewTags!: boolean;
+  @Prop({ default: () => [] }) errors!: string[];
+
+  T = T;
+  allowTags = this.initialAllowTags;
+  problemLevelTag: string | null = this.problemLevel;
+  newPublicTag = '';
+
+  addPublicTag(tag: string): void {
+    if (this.canAddNewTags && !this.selectedPublicTags.includes(tag)) {
+      this.$emit('emit-add-tag', this.alias, tag, true);
+    }
+    this.newPublicTag = '';
+  }
+
+  removeTag(tag: string, isPublic: boolean): void {
+    if (this.canAddNewTags) {
+      this.$emit('emit-remove-tag', this.alias, tag, isPublic);
+    }
+  }
+
+  publicTagsSerializer(tagname: string): string {
+    if (Object.prototype.hasOwnProperty.call(T, tagname)) {
+      return T[tagname];
+    }
+    return tagname;
+  }
+
+  @Watch('allowTags')
+  onPropertyChanged(newValue: boolean): void {
+    if (!this.canAddNewTags) return;
+    this.$emit('emit-change-allow-user-add-tag', this.alias, this.title, newValue);
+  }
+}
+</script>
+```
+
+**Key features:**
+- Multiple prop types (strings, arrays, booleans)
+- Integration with third-party components (vue-typeahead-bootstrap)
+- FontAwesome icon integration
+- Internationalization with `T` (language object)
+- Custom event emissions with multiple parameters
+- Watchers for reactive updates
+- Form handling
+
+## Component Patterns
+
+### Props Declaration
+
+```typescript
+// Required prop
+@Prop() username!: string;
+
+// Optional prop with default
+@Prop({ default: false }) isActive!: boolean;
+
+// Prop with default object/array (use factory function)
+@Prop({ default: () => [] }) items!: string[];
+@Prop({ default: () => ({}) }) config!: object;
+
+// Prop with type validation
+@Prop({ type: String, required: true }) id!: string;
+
+// Prop with custom validator
+@Prop({
+  validator: (value: string) => ['small', 'medium', 'large'].includes(value)
+}) size!: string;
+```
+
+### Event Handling
+
+```typescript
+// Emit events to parent
+handleClick(): void {
+  this.$emit('click', this.username);
+}
+
+// Emit with multiple arguments
+handleUpdate(): void {
+  this.$emit('update', this.id, this.value, this.metadata);
+}
+
+// Two-way binding with .sync
+@Prop() value!: string;
+
+updateValue(newValue: string): void {
+  this.$emit('update:value', newValue);
+}
+```
+
+### Computed Properties
+
+```typescript
+// Read-only computed
+get fullName(): string {
+  return `${this.firstName} ${this.lastName}`;
+}
+
+// Computed with getter and setter
+get displayValue(): string {
+  return this.internalValue.toUpperCase();
+}
+
+set displayValue(value: string) {
+  this.internalValue = value.toLowerCase();
+}
+```
+
+### Lifecycle Hooks
+
+```typescript
+// Component lifecycle
+created(): void {
+  // Component instance created
+  this.fetchData();
+}
+
+mounted(): void {
+  // Component mounted to DOM
+  this.$nextTick(() => {
+    // DOM operations safe here
+  });
+}
+
+beforeDestroy(): void {
+  // Cleanup before component destruction
+  this.cleanup();
+}
+
+updated(): void {
+  // After component re-renders
+}
+```
+
+### Watchers
+
+```typescript
+// Watch a single property
+@Watch('username')
+onUsernameChange(newVal: string, oldVal: string): void {
+  console.log(`Changed from ${oldVal} to ${newVal}`);
+}
+
+// Deep watch for objects/arrays
+@Watch('user', { deep: true })
+onUserChange(newUser: User): void {
+  this.validateUser(newUser);
+}
+
+// Immediate execution
+@Watch('data', { immediate: true })
+onDataChange(newData: any[]): void {
+  this.processData(newData);
+}
+```
+
+## Template Directives
+
+### Conditional Rendering
+
+```vue
+<!-- v-if: Conditionally render element -->
+<div v-if="isLoggedIn">Welcome back!</div>
+<div v-else-if="isGuest">Hello, guest!</div>
+<div v-else>Please log in</div>
+
+<!-- v-show: Toggle visibility with CSS -->
+<div v-show="isVisible">This uses display: none</div>
+```
+
+### List Rendering
+
+```vue
+<!-- Loop through arrays -->
+<div v-for="user in users" :key="user.id">
+  {{ user.name }}
+</div>
+
+<!-- Loop with index -->
+<div v-for="(item, index) in items" :key="index">
+  {{ index }}: {{ item }}
+</div>
+
+<!-- Loop through objects -->
+<div v-for="(value, key) in object" :key="key">
+  {{ key }}: {{ value }}
+</div>
+```
+
+### Binding
+
+```vue
+<!-- Attribute binding -->
+<img :src="imageUrl" :alt="imageAlt" />
+
+<!-- Class binding -->
+<div :class="{ active: isActive, 'text-danger': hasError }">
+<div :class="[baseClass, { active: isActive }]">
+
+<!-- Style binding -->
+<div :style="{ color: textColor, fontSize: fontSize + 'px' }">
+
+<!-- Two-way binding -->
+<input v-model="message" />
+<input v-model.trim="username" />
+<input v-model.number="age" />
+```
+
+### Event Handling
+
+```vue
+<!-- Click events -->
+<button @click="handleClick">Click me</button>
+<button @click="handleClick($event, id)">With args</button>
+
+<!-- Event modifiers -->
+<form @submit.prevent="onSubmit">...</form>
+<input @keyup.enter="submit" />
+<div @click.stop="handleClick">...</div>
+```
+
+## Internationalization
+
+omegaUp uses a centralized translation system:
+
+```typescript
+import T from '../../lang';
+
+@Component
+export default class MyComponent extends Vue {
+  T = T; // Make available in template
+}
+```
+
+```vue
+<template>
+  <div>
+    <h1>{{ T.wordsWelcome }}</h1>
+    <p>{{ T.problemEditFormDescription }}</p>
+  </div>
+</template>
+```
+
+## Icon Integration
+
+omegaUp uses FontAwesome icons:
+
+```typescript
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { faTrash, faEdit, faPlus } from '@fortawesome/free-solid-svg-icons';
+
+// Register icons
+library.add(faTrash, faEdit, faPlus);
+
+@Component({
+  components: { FontAwesomeIcon },
+})
+export default class MyComponent extends Vue {}
+```
+
+```vue
+<template>
+  <button>
+    <font-awesome-icon :icon="['fas', 'trash']" />
+    Delete
+  </button>
+</template>
+```
+
+## Best Practices
+
+### Component Organization
+
+1. **Keep components focused**: One component, one responsibility
+2. **Use meaningful names**: `ProblemTags.vue`, not `Tags.vue`
+3. **Group by feature**: Place related components in same directory
+4. **Extract reusable logic**: Create composable utilities
+
+### Props vs Data
+
+- **Props**: Data from parent (immutable)
+- **Data**: Internal component state (mutable)
+
+```typescript
+// ❌ Don't mutate props
+@Prop() items!: string[];
+
+addItem(item: string): void {
+  this.items.push(item); // Wrong!
+}
+
+// ✅ Use local data or emit events
+@Prop() items!: string[];
+private localItems: string[] = [];
+
+mounted(): void {
+  this.localItems = [...this.items];
+}
+
+addItem(item: string): void {
+  this.$emit('add-item', item); // Better!
+}
+```
+
+### Type Safety
+
+```typescript
+// Define interfaces for complex props
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+
+@Prop() user!: User;
+
+// Type function parameters and returns
+formatUser(user: User): string {
+  return `${user.username} <${user.email}>`;
+}
+```
+
+### Performance
+
+```vue
+<!-- Use v-show for frequent toggles -->
+<div v-show="isVisible">Toggled often</div>
+
+<!-- Use v-if for conditional rendering -->
+<div v-if="shouldRender">Rarely changes</div>
+
+<!-- Always use :key with v-for -->
+<div v-for="item in items" :key="item.id">{{ item.name }}</div>
+
+<!-- Use computed properties for expensive operations -->
+<template>
+  <div>{{ filteredItems }}</div>
+</template>
+
+<script lang="ts">
+get filteredItems(): Item[] {
+  return this.items.filter(item => item.active);
+}
+</script>
+```
+
+## Component Communication
+
+### Parent to Child: Props
+
+```vue
+<!-- Parent -->
+<child-component :message="parentMessage" />
+
+<!-- Child -->
+<script lang="ts">
+@Prop() message!: string;
+</script>
+```
+
+### Child to Parent: Events
+
+```typescript
+// Child emits event
+this.$emit('update', newValue);
+
+// Parent handles event
+<child-component @update="handleUpdate" />
+```
+
+### Sibling Communication: Event Bus or Vuex
+
+```typescript
+// Using Vuex store
+import { mapState, mapMutations } from 'vuex';
+
+@Component({
+  computed: mapState(['user', 'settings']),
+  methods: mapMutations(['updateUser']),
+})
+export default class MyComponent extends Vue {}
+```
+
+## Testing Components
+
+Components should have corresponding `.test.ts` files using Vue Test Utils and Jest.
+
+## Related Documentation
+
+- [Frontend Architecture Overview](/development/frontend/overview)
+- [TypeScript Guidelines](/development/frontend/typescript)
+- [Storybook Documentation](/development/frontend/storybook)

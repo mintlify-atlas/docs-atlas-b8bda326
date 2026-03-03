@@ -1,0 +1,317 @@
+---
+title: How to Make a Pull Request
+description: Step-by-step guide for creating and submitting pull requests to omegaUp
+---
+
+## Development Process
+
+After forking the omegaUp repository, the `main` branch in your repository should always be kept up to date with the `main` branch of the omegaUp repository, which contains the latest changes approved by the review team.
+
+<Warning>
+You should avoid committing directly to `main`. Instead, create a separate branch for each change you plan to submit via a Pull Request.
+</Warning>
+
+Once you have [set up your development environment](https://github.com/omegaup/omegaup/blob/main/frontend/www/docs/Development-Environment-Setup-Process.md), follow these steps:
+
+## Issue Assignment Requirement
+
+<Warning>
+**Important:** Before opening a Pull Request, you must ensure that:
+
+1. **Your PR is linked to an existing issue**: Every PR must reference an issue using closing keywords (e.g., `Fixes #1234` or `Closes #1234`) in the PR description.
+
+2. **The issue is assigned to you**: The linked issue must be explicitly assigned to you (the PR author) before you open the PR.
+</Warning>
+
+If either of these conditions is not met, an automated check will fail on your PR. To resolve this:
+
+- If you don't have an issue to link, first [create a new issue](https://github.com/omegaup/omegaup/issues/new) describing the bug fix or feature you want to implement.
+- Comment on the issue expressing your interest in working on it and wait for a maintainer to assign it to you.
+- Once the issue is assigned to you, you can proceed to open your Pull Request.
+
+This process helps us track contributions effectively and ensures that work is properly coordinated among contributors.
+
+## Setting Up the omegaUp Fork and Remotes
+
+You only need to perform these configurations once.
+
+<Steps>
+  <Step title="Fork the repository">
+    Visit [https://github.com/omegaup/omegaup](https://github.com/omegaup/omegaup) and click the Fork button to create your own copy of the repository.
+  </Step>
+  
+  <Step title="Clone the repository">
+    Clone the repository into your development environment:
+    ```bash
+    git clone https://github.com/omegaup/omegaup.git
+    cd omegaup
+    ```
+  </Step>
+  
+  <Step title="Verify the origin remote">
+    Check if you have already configured the omegaUp remote repository:
+    ```bash
+    git remote -v
+    ```
+    
+    You should see:
+    ```bash
+    origin        https://github.com/omegaup/omegaup.git (fetch)
+    origin        https://github.com/omegaup/omegaup.git (push)
+    ```
+    
+    If not, run:
+    ```bash
+    git remote add origin https://github.com/omegaup/omegaup.git
+    ```
+  </Step>
+  
+  <Step title="Add your fork as upstream">
+    Add the remote for your forked repository:
+    ```bash
+    git remote add [remote-name] https://github.com/[username]/omegaup
+    ```
+    
+    Verify with:
+    ```bash
+    git remote -v
+    ```
+    
+    You should see:
+    ```bash
+    origin    https://github.com/omegaup/omegaup.git (fetch)
+    origin    https://github.com/omegaup/omegaup.git (push)
+    upstream  https://github.com/[username]/omegaup.git (fetch)
+    upstream  https://github.com/[username]/omegaup.git (push)
+    ```
+  </Step>
+</Steps>
+
+## Updating Your main Branch
+
+It is recommended that you avoid making changes directly in the `main` branch, as it is very difficult to return it to a clean state once your changes have been merged. However, it is still a good idea to update it from time to time:
+
+```bash
+git checkout main  # Switch back to main if you were on another branch
+git fetch origin   # Fetch the latest changes from omegaup/main
+git pull --rebase origin main  # Sync your main branch with omegaup/main
+git push upstream
+```
+
+<Note>
+If `git push upstream` fails, it means you broke the rule of not making changes in `main`. Try running `git push upstream -f`.
+</Note>
+
+## Additional Settings
+
+### Locale Configuration
+
+The virtual machine does not have `en_US.UTF-8` as the default language. To update it, follow [these instructions](https://askubuntu.com/questions/881742/locale-cannot-set-lc-ctype-to-default-locale-no-such-file-or-directory-locale/893586#893586).
+
+### Install Dependencies
+
+At first, there are many missing dependencies. You need to run `composer install` inside the VM to install them.
+
+### MySQL Configuration
+
+If you encounter the following error when trying to push changes:
+
+```bash
+FileNotFoundError: [Errno 2] No such file or directory: 'mysql'
+error: failed to push some refs to 'https://github.com/[username]/omegaup.git'
+```
+
+Install `mysql-client` and `mysql-server` outside the container:
+
+```bash
+sudo apt install mysql-client mysql-server
+```
+
+Then, add the following configuration:
+
+```bash
+cat > ~/.mysql.docker.cnf <<EOF
+[client]
+port=13306
+host=127.0.0.1
+protocol=tcp
+user=root
+password=omegaup
+EOF
+ln -sf ~/.mysql.docker.cnf .my.cnf
+```
+
+## Starting a New Change
+
+We invite you to follow our [Coding Guidelines](/development/coding-guidelines) for contributing to our project. By adhering to them, your changes will be easier to review and integrate into production.
+
+<Steps>
+  <Step title="Create a new branch">
+    Before making any modifications, run the following commands to create a new branch that is synchronized with `omegaup`:
+    ```bash
+    git checkout -b feature-name origin/main # Creates a new branch and syncs it with omegaUp
+    git push upstream feature-name # Pushes your changes to GitHub
+    ```
+  </Step>
+</Steps>
+
+## Upload Your Changes and Make a New Pull Request
+
+<Steps>
+  <Step title="Add your changes">
+    Add your changes to a new commit:
+    ```bash
+    git add .
+    ```
+  </Step>
+  
+  <Step title="Commit your changes">
+    Commit your changes with a descriptive message:
+    ```bash
+    git commit -m "Write a description for your committed changes."
+    ```
+  </Step>
+  
+  <Step title="Run the validators">
+    Before pushing your changes, we strongly recommend running:
+    ```bash
+    ./stuff/lint.sh
+    ```
+    
+    This command will align elements, remove unnecessary lines, and perform extra validations for each of the languages used in omegaUp.
+    
+    <Info>
+    While this command should not be necessary if you follow the development process correctly, it is particularly useful if you are using external tools that might bypass the pre-push hooks. These hooks include this script, so running it manually ensures your changes meet the project's standards.
+    </Info>
+  </Step>
+  
+  <Step title="Set up user information (first time only)">
+    You only need to enter this information the first time you push:
+    ```bash
+    git config --global user.email "your-email@domain.com"
+    git config --global user.name "<your-username>"
+    ```
+  </Step>
+  
+  <Step title="Push to your fork">
+    Push from your commit to your fork:
+    ```bash
+    git push -u upstream
+    ```
+  </Step>
+  
+  <Step title="Create the Pull Request">
+    1. Go to `https://github.com/[username]/omegaup`
+    2. Click on the **Branch** button and select the branch you made changes on
+    3. Click on **Pull request**
+    4. Fill in the required information
+    5. **Important**: Mention the issue ID this change is fixing in the PR description:
+       ```
+       Fixes: #1234
+       ```
+    6. Press the "Create Pull request" button
+    
+    This way, once the change is approved and merged with the main branch, the issue will be automatically closed.
+  </Step>
+</Steps>
+
+## Making Additional Changes After Opening a PR
+
+If you have to make more changes after making the Pull Request:
+
+<Steps>
+  <Step title="Add your changes">
+    ```bash
+    git add .
+    ```
+  </Step>
+  
+  <Step title="Commit your changes">
+    ```bash
+    git commit -m "Put a description of the changes here."
+    ```
+  </Step>
+  
+  <Step title="Push to your fork">
+    ```bash
+    git push
+    ```
+    
+    <Note>
+    The `-u` flag is no longer needed because your branch is now linked to a defined upstream.
+    </Note>
+  </Step>
+</Steps>
+
+## Deleting a Branch
+
+You can see the branches that you have in your local copy by running:
+
+```bash
+git branch
+```
+
+You can switch between branches by doing:
+
+```bash
+git checkout branchname
+```
+
+If we have already merged a Pull Request, you can clean your local branch with:
+
+```bash
+git branch -D branchname
+```
+
+But you also have to go to GitHub and delete the branch there (by clicking on "Branches") or directly on the Pull Request.
+
+After this, you will still see the remote branch if you run the command `git branch -a`. You will find a line similar to:
+
+```
+remotes/upstream/newfeaturename
+```
+
+You can delete it in the following way:
+
+<Steps>
+  <Step title="Dry run prune">
+    Enter the following command:
+    ```bash
+    git remote prune upstream --dry-run
+    ```
+    
+    You will see something similar to:
+    ```bash
+    [would prune] upstream/newfeaturename
+    ```
+  </Step>
+  
+  <Step title="Prune the remote">
+    Now enter the command:
+    ```bash
+    git remote prune upstream
+    ```
+    
+    You will see something similar to:
+    ```
+    Pruning upstream
+    URL: git@github.com:[username]/omegaup.git
+    * [pruned] upstream/newfeaturename
+    ```
+  </Step>
+</Steps>
+
+If you run the command `git branch -a` again, you will notice that everything related to the branch has been removed.
+
+## What Happens After Submitting My Pull Request
+
+- Make sure all tests have passed.
+- Wait for a member of omegaUp to review your change.
+- Address any comments made during the review.
+- Has your PR been merged? Wait for the weekend deployment to see your changes in production.
+
+## Related Topics
+
+- [Coding guidelines](/development/coding-guidelines)
+- [Useful development commands](https://github.com/omegaup/omegaup/blob/main/frontend/www/docs/Useful-Commands-for-Development.md)
+- [How to use Cypress in omegaUp](https://github.com/omegaup/omegaup/blob/main/frontend/www/docs/How-to-use-Cypress-in-omegaUp.md)

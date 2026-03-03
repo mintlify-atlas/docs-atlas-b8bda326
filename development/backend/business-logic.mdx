@@ -1,0 +1,760 @@
+---
+title: Business Logic Implementation
+description: Understanding service orchestration and business rules in omegaUp's backend
+---
+
+## Overview
+
+Business logic in omegaUp is implemented across several layers:
+
+1. **Controllers** - Handle API requests, validation, and orchestration
+2. **DAOs** - Handle database operations and queries
+3. **Service Classes** - Encapsulate complex business rules
+4. **Authorization** - Manage access control and permissions
+5. **Validators** - Validate input data and business rules
+
+## Architecture Pattern
+
+omegaUp follows a **service-oriented architecture** where:
+
+- **Controllers** orchestrate the flow
+- **Service classes** implement reusable business logic
+- **DAOs** handle data persistence
+- **Authorization** enforces security rules
+
+```
+API Request
+    ↓
+Controller (validates & orchestrates)
+    ↓
+Authorization (checks permissions)
+    ↓
+Service Classes (business logic)
+    ↓
+DAOs (database operations)
+    ↓
+Value Objects (data representation)
+```
+
+## Service Classes
+
+Service classes encapsulate complex business logic that doesn't fit neatly into Controllers or DAOs.
+
+### Authorization Service
+
+Location: `frontend/server/src/Authorization.php`
+
+Handles all access control decisions:
+
+```php
+namespace OmegaUp;
+
+class Authorization {
+    /**
+     * Check if user can view a problem
+     */
+    public static function canViewProblem(
+        ?\OmegaUp\DAO\VO\Identities $identity,
+        \OmegaUp\DAO\VO\Problems $problem
+    ): bool {
+        // Public problems are visible to everyone
+        if ($problem->visibility >= 2) {
+            return true;
+        }
+
+        // No identity means anonymous user
+        if (is_null($identity)) {
+            return false;
+        }
+
+        // Check if user is admin
+        if (self::isSystemAdmin($identity)) {
+            return true;
+        }
+
+        // Check if user is problem admin
+        $acl = \OmegaUp\DAO\ACLs::getByPK($problem->acl_id);
+        if (is_null($acl)) {
+            return false;
+        }
+
+        return self::isACLOwner($identity, $acl);
+    }
+
+    /**
+     * Check if user can edit a contest
+     */
+    public static function canEditContest(
+        \OmegaUp\DAO\VO\Identities $identity,
+        \OmegaUp\DAO\VO\Contests $contest
+    ): bool {
+        if (is_null($contest->acl_id)) {
+            return false;
+        }
+
+        return self::isSystemAdmin($identity)
+            || self::isContestAdmin($identity, $contest);
+    }
+
+    /**
+     * Check if identity is a system administrator
+     */
+    public static function isSystemAdmin(
+        \OmegaUp\DAO\VO\Identities $identity
+    ): bool {
+        return \OmegaUp\Authorization::hasRole(
+            $identity,
+            \OmegaUp\Authorization::ADMIN_ROLE
+        );
+    }
+
+    /**
+     * Check if identity has a specific role
+     */
+    public static function hasRole(
+        \OmegaUp\DAO\VO\Identities $identity,
+        string $role
+    ): bool {
+        $userRoles = \OmegaUp\DAO\UserRoles::getUserRoles(
+            $identity->identity_id
+        );
+
+        foreach ($userRoles as $userRole) {
+            if ($userRole['role'] === $role) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+```
+
+### Validators Service
+
+Location: `frontend/server/src/Validators.php`
+
+Validates business rules and input constraints:
+
+```php
+namespace OmegaUp;
+
+class Validators {
+    /**
+     * Validate username format
+     */
+    public static function normalUsername(string $username): bool {
+        // Username must be 2-50 characters
+        // Can contain letters, numbers, underscores, and hyphens
+        return preg_match('/^[a-zA-Z0-9_-]{2,50}$/', $username) === 1;
+    }
+
+    /**
+     * Validate email format
+     */
+    public static function isValidEmail(string $email): bool {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false
+            && strlen($email) <= 100;
+    }
+
+    /**
+     * Validate alias (for problems, contests, etc.)
+     */
+    public static function isValidAlias(string $alias): bool {
+        // Alias must be 2-32 characters
+        // Can only contain lowercase letters, numbers, and hyphens
+        return preg_match('/^[a-z0-9-]{2,32}$/', $alias) === 1;
+    }
+
+    /**
+     * Validate contest/course dates
+     */
+    public static function isValidContestDates(
+        int $startTime,
+        int $finishTime
+    ): bool {
+        // Start time must be in the future
+        if ($startTime < \OmegaUp\Time::get()) {
+            return false;
+        }
+
+        // Finish time must be after start time
+        if ($finishTime <= $startTime) {
+            return false;
+        }
+
+        // Contest length must be reasonable (< 60 days for normal users)
+        $duration = $finishTime - $startTime;
+        if ($duration > 60 * 60 * 24 * 60) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate string is non-empty
+     */
+    public static function validateStringNonEmpty(
+        ?string $value,
+        string $parameterName
+    ): void {
+        if (is_null($value) || strlen(trim($value)) === 0) {
+            throw new \OmegaUp\Exceptions\InvalidParameterException(
+                'parameterEmpty',
+                $parameterName
+            );
+        }
+    }
+}
+```
+
+### Scoreboard Service
+
+Location: `frontend/server/src/Scoreboard.php`
+
+Calculates and caches contest scoreboards:
+
+```php
+namespace OmegaUp;
+
+class Scoreboard {
+    /**
+     * Generate scoreboard for a contest
+     */
+    public static function generate(
+        \OmegaUp\DAO\VO\Contests $contest,
+        \OmegaUp\DAO\VO\Problemsets $problemset,
+        bool $showAllRuns = false
+    ): array {
+        // Get all problems in problemset
+        $problems = \OmegaUp\DAO\ProblemsetProblems::getByProblemset(
+            $problemset->problemset_id
+        );
+
+        // Get all contestants
+        $contestants = \OmegaUp\DAO\ProblemsetIdentities::getByProblemset(
+            $problemset->problemset_id
+        );
+
+        // Get all runs for this problemset
+        $runs = \OmegaUp\DAO\Runs::getByProblemset(
+            $problemset->problemset_id
+        );
+
+        // Calculate scores
+        $ranking = self::calculateRanking(
+            $contest,
+            $problems,
+            $contestants,
+            $runs,
+            $showAllRuns
+        );
+
+        // Sort by score descending, then by penalty ascending
+        usort($ranking, function ($a, $b) {
+            if ($a['total']['points'] != $b['total']['points']) {
+                return $b['total']['points'] <=> $a['total']['points'];
+            }
+            return $a['total']['penalty'] <=> $b['total']['penalty'];
+        });
+
+        // Assign places
+        $currentPlace = 1;
+        foreach ($ranking as $idx => &$entry) {
+            if ($idx > 0 && (
+                $ranking[$idx - 1]['total']['points'] != $entry['total']['points']
+                || $ranking[$idx - 1]['total']['penalty'] != $entry['total']['penalty']
+            )) {
+                $currentPlace = $idx + 1;
+            }
+            $entry['place'] = $currentPlace;
+        }
+
+        return [
+            'problems' => $problems,
+            'ranking' => $ranking,
+            'start_time' => $contest->start_time,
+            'finish_time' => $contest->finish_time,
+        ];
+    }
+
+    /**
+     * Calculate individual contestant rankings
+     */
+    private static function calculateRanking(
+        \OmegaUp\DAO\VO\Contests $contest,
+        array $problems,
+        array $contestants,
+        array $runs,
+        bool $showAllRuns
+    ): array {
+        $ranking = [];
+
+        foreach ($contestants as $contestant) {
+            $entry = [
+                'username' => $contestant['username'],
+                'name' => $contestant['name'],
+                'country' => $contestant['country_id'],
+                'problems' => [],
+                'total' => [
+                    'points' => 0,
+                    'penalty' => 0,
+                ],
+            ];
+
+            foreach ($problems as $problem) {
+                $problemScore = self::calculateProblemScore(
+                    $contestant['identity_id'],
+                    $problem['problem_id'],
+                    $runs,
+                    $contest,
+                    $showAllRuns
+                );
+
+                $entry['problems'][] = $problemScore;
+                $entry['total']['points'] += $problemScore['points'];
+                $entry['total']['penalty'] += $problemScore['penalty'];
+            }
+
+            $ranking[] = $entry;
+        }
+
+        return $ranking;
+    }
+
+    /**
+     * Calculate score for a single problem
+     */
+    private static function calculateProblemScore(
+        int $identityId,
+        int $problemId,
+        array $allRuns,
+        \OmegaUp\DAO\VO\Contests $contest,
+        bool $showAllRuns
+    ): array {
+        $bestScore = 0;
+        $penalty = 0;
+        $runs = 0;
+
+        foreach ($allRuns as $run) {
+            if ($run['identity_id'] != $identityId
+                || $run['problem_id'] != $problemId) {
+                continue;
+            }
+
+            $runs++;
+
+            if ($run['contest_score'] > $bestScore) {
+                $bestScore = $run['contest_score'];
+            }
+
+            // Calculate penalty based on contest rules
+            if ($contest->penalty_type === 'contest_start') {
+                $penalty = max(
+                    $penalty,
+                    ($run['time'] - $contest->start_time) / 60
+                );
+            } elseif ($contest->penalty_type === 'problem_open') {
+                // Penalty from first problem open
+                $penalty = max($penalty, $run['submit_delay'] / 60);
+            }
+        }
+
+        return [
+            'points' => $bestScore,
+            'penalty' => $penalty,
+            'runs' => $runs,
+        ];
+    }
+}
+```
+
+## Business Logic in Controllers
+
+Controllers implement business logic by orchestrating services, DAOs, and authorization.
+
+### Example: Creating a Contest
+
+```php
+namespace OmegaUp\Controllers;
+
+class Contest extends Controller {
+    /**
+     * Create a new contest
+     *
+     * @omegaup-request-param string $title
+     * @omegaup-request-param string $alias
+     * @omegaup-request-param string $description
+     * @omegaup-request-param int $start_time
+     * @omegaup-request-param int $finish_time
+     */
+    public static function apiCreate(\OmegaUp\Request $r): array {
+        // Step 1: Authenticate user
+        $r->ensureIdentity();
+
+        // Step 2: Extract and validate parameters
+        $title = $r->ensureString('title');
+        $alias = $r->ensureString('alias');
+        $startTime = $r->ensureInt('start_time');
+        $finishTime = $r->ensureInt('finish_time');
+
+        // Step 3: Validate business rules
+        \OmegaUp\Validators::validateStringNonEmpty($title, 'title');
+        
+        if (!\OmegaUp\Validators::isValidAlias($alias)) {
+            throw new \OmegaUp\Exceptions\InvalidParameterException(
+                'parameterInvalid',
+                'alias'
+            );
+        }
+
+        if (!\OmegaUp\Validators::isValidContestDates($startTime, $finishTime)) {
+            throw new \OmegaUp\Exceptions\InvalidParameterException(
+                'parameterInvalid',
+                'dates'
+            );
+        }
+
+        // Step 4: Check authorization
+        if (!\OmegaUp\Authorization::canCreateContest($r->identity)) {
+            throw new \OmegaUp\Exceptions\ForbiddenAccessException();
+        }
+
+        // Step 5: Check if alias is available
+        $existingContest = \OmegaUp\DAO\Contests::getByAlias($alias);
+        if (!is_null($existingContest)) {
+            throw new \OmegaUp\Exceptions\DuplicatedEntryInDatabaseException(
+                'aliasInUse'
+            );
+        }
+
+        // Step 6: Create contest in transaction
+        \OmegaUp\DAO\DAO::transBegin();
+
+        try {
+            // Create ACL for contest
+            $acl = new \OmegaUp\DAO\VO\ACLs([
+                'owner_id' => $r->identity->identity_id,
+            ]);
+            $aclId = \OmegaUp\DAO\ACLs::create($acl);
+
+            // Create contest
+            $contest = new \OmegaUp\DAO\VO\Contests([
+                'title' => $title,
+                'alias' => $alias,
+                'description' => $r->ensureOptionalString('description') ?? '',
+                'start_time' => $startTime,
+                'finish_time' => $finishTime,
+                'acl_id' => $aclId,
+            ]);
+            $contestId = \OmegaUp\DAO\Contests::create($contest);
+
+            // Create associated problemset
+            $problemset = new \OmegaUp\DAO\VO\Problemsets([
+                'contest_id' => $contestId,
+                'acl_id' => $aclId,
+                'needs_basic_information' => false,
+            ]);
+            \OmegaUp\DAO\Problemsets::create($problemset);
+
+            // Add creator as contest admin
+            \OmegaUp\ACLs::addUser($aclId, $r->identity->identity_id);
+
+            \OmegaUp\DAO\DAO::transEnd();
+        } catch (\Exception $e) {
+            \OmegaUp\DAO\DAO::transRollback();
+            throw $e;
+        }
+
+        return [
+            'status' => 'ok',
+            'alias' => $alias,
+        ];
+    }
+}
+```
+
+### Example: Submitting a Run
+
+```php
+namespace OmegaUp\Controllers;
+
+class Run extends Controller {
+    /**
+     * Submit code for a problem
+     *
+     * @omegaup-request-param string $problem_alias
+     * @omegaup-request-param string $language
+     * @omegaup-request-param string $source
+     */
+    public static function apiCreate(\OmegaUp\Request $r): array {
+        // Step 1: Authenticate
+        $r->ensureIdentity();
+
+        // Step 2: Validate parameters
+        $problemAlias = $r->ensureString('problem_alias');
+        $language = $r->ensureString('language');
+        $source = $r->ensureString('source');
+
+        // Step 3: Get problem
+        $problem = \OmegaUp\DAO\Problems::getByAlias($problemAlias);
+        if (is_null($problem)) {
+            throw new \OmegaUp\Exceptions\NotFoundException(
+                'problemNotFound'
+            );
+        }
+
+        // Step 4: Check if user can submit
+        if (!\OmegaUp\Authorization::canSubmitToProblem(
+            $r->identity,
+            $problem
+        )) {
+            throw new \OmegaUp\Exceptions\ForbiddenAccessException();
+        }
+
+        // Step 5: Validate language is allowed
+        $allowedLanguages = explode(',', $problem->languages);
+        if (!in_array($language, $allowedLanguages)) {
+            throw new \OmegaUp\Exceptions\InvalidParameterException(
+                'parameterInvalid',
+                'language'
+            );
+        }
+
+        // Step 6: Check submission rate limits
+        if (!self::canSubmitNow($r->identity, $problem)) {
+            throw new \OmegaUp\Exceptions\InvalidParameterException(
+                'submissionTooFrequent'
+            );
+        }
+
+        // Step 7: Create run
+        $run = new \OmegaUp\DAO\VO\Runs([
+            'identity_id' => $r->identity->identity_id,
+            'problem_id' => $problem->problem_id,
+            'problemset_id' => $r->ensureOptionalInt('problemset_id'),
+            'language' => $language,
+            'status' => 'new',
+            'verdict' => 'JE', // Judging Error initially
+            'runtime' => 0,
+            'memory' => 0,
+            'score' => 0,
+            'contest_score' => 0,
+            'time' => \OmegaUp\Time::get(),
+        ]);
+
+        \OmegaUp\DAO\Runs::create($run);
+
+        // Step 8: Store source code
+        \OmegaUp\Grader::storeSource(
+            $run->guid,
+            $language,
+            $source
+        );
+
+        // Step 9: Send to grader queue
+        \OmegaUp\Grader::grade($run, false);
+
+        return [
+            'guid' => $run->guid,
+            'status' => 'ok',
+        ];
+    }
+
+    /**
+     * Check if user can submit now (rate limiting)
+     */
+    private static function canSubmitNow(
+        \OmegaUp\DAO\VO\Identities $identity,
+        \OmegaUp\DAO\VO\Problems $problem
+    ): bool {
+        $lastSubmission = \OmegaUp\DAO\Runs::getLastSubmission(
+            $identity->identity_id,
+            $problem->problem_id
+        );
+
+        if (is_null($lastSubmission)) {
+            return true;
+        }
+
+        // Require 60 seconds between submissions
+        $timeSinceLastSubmission = \OmegaUp\Time::get()
+            - $lastSubmission->time;
+        
+        return $timeSinceLastSubmission >= 60;
+    }
+}
+```
+
+## Common Business Patterns
+
+### 1. Authentication & Authorization
+
+```php
+// Require authentication
+$r->ensureIdentity();
+
+// Check permission
+if (!\OmegaUp\Authorization::canEditProblem($r->identity, $problem)) {
+    throw new \OmegaUp\Exceptions\ForbiddenAccessException();
+}
+```
+
+### 2. Validation
+
+```php
+// Validate required parameter
+\OmegaUp\Validators::validateStringNonEmpty($title, 'title');
+
+// Validate format
+if (!\OmegaUp\Validators::isValidAlias($alias)) {
+    throw new \OmegaUp\Exceptions\InvalidParameterException(
+        'parameterInvalid',
+        'alias'
+    );
+}
+
+// Check uniqueness
+if (!is_null(\OmegaUp\DAO\Problems::getByAlias($alias))) {
+    throw new \OmegaUp\Exceptions\DuplicatedEntryInDatabaseException();
+}
+```
+
+### 3. Transactions
+
+```php
+\OmegaUp\DAO\DAO::transBegin();
+
+try {
+    // Multiple database operations
+    \OmegaUp\DAO\Contests::create($contest);
+    \OmegaUp\DAO\Problemsets::create($problemset);
+    
+    \OmegaUp\DAO\DAO::transEnd();
+} catch (\Exception $e) {
+    \OmegaUp\DAO\DAO::transRollback();
+    throw $e;
+}
+```
+
+### 4. Caching
+
+```php
+// Check cache first
+$scoreboard = \OmegaUp\Cache::get("contest-scoreboard-{$contestId}");
+
+if (is_null($scoreboard)) {
+    // Generate scoreboard
+    $scoreboard = \OmegaUp\Scoreboard::generate($contest, $problemset);
+    
+    // Store in cache for 5 minutes
+    \OmegaUp\Cache::set(
+        "contest-scoreboard-{$contestId}",
+        $scoreboard,
+        300
+    );
+}
+```
+
+### 5. Rate Limiting
+
+```php
+private static function checkRateLimit(
+    \OmegaUp\DAO\VO\Identities $identity,
+    string $action
+): void {
+    $key = "ratelimit-{$action}-{$identity->identity_id}";
+    $count = \OmegaUp\Cache::get($key) ?? 0;
+    
+    if ($count > 100) { // 100 requests per hour
+        throw new \OmegaUp\Exceptions\RateLimitExceededException();
+    }
+    
+    \OmegaUp\Cache::set($key, $count + 1, 3600);
+}
+```
+
+## Integration with External Services
+
+### Grader Service
+
+Location: `frontend/server/src/Grader.php`
+
+Communicates with the judge/grader service:
+
+```php
+namespace OmegaUp;
+
+class Grader {
+    /**
+     * Submit run to grader for evaluation
+     */
+    public static function grade(
+        \OmegaUp\DAO\VO\Runs $run,
+        bool $rejudge = false
+    ): void {
+        // Send to RabbitMQ queue
+        $payload = [
+            'id' => $run->run_id,
+            'guid' => $run->guid,
+            'language' => $run->language,
+            'problem_id' => $run->problem_id,
+        ];
+        
+        \OmegaUp\RabbitMQConnection::getInstance()
+            ->publish('runs', json_encode($payload));
+    }
+}
+```
+
+## Testing Business Logic
+
+Business logic is tested through integration tests:
+
+```php
+class ContestCreateTest extends \OmegaUp\Test\ControllerTestCase {
+    public function testCreateValidContest() {
+        $user = \OmegaUp\Test\Factories\User::createUser();
+        
+        $login = self::login($user);
+        
+        $response = \OmegaUp\Controllers\Contest::apiCreate(
+            new \OmegaUp\Request([
+                'auth_token' => $login->auth_token,
+                'title' => 'Test Contest',
+                'alias' => 'test-contest',
+                'start_time' => \OmegaUp\Time::get() + 3600,
+                'finish_time' => \OmegaUp\Time::get() + 7200,
+            ])
+        );
+        
+        $this->assertSame('ok', $response['status']);
+    }
+}
+```
+
+## Best Practices
+
+### DO:
+
+1. **Validate all inputs** before processing
+2. **Check authorization** before allowing operations
+3. **Use transactions** for multi-step operations
+4. **Implement rate limiting** for expensive operations
+5. **Cache expensive computations** (scoreboards, rankings)
+6. **Log important events** for auditing
+
+### DON'T:
+
+1. **Don't skip validation** assuming frontend validates
+2. **Don't trust user input** without checking
+3. **Don't put business logic in DAOs** (keep them for data access only)
+4. **Don't use raw SQL in controllers** (use DAO methods)
+5. **Don't expose internal errors** to users (use generic error messages)
+
+## Next Steps
+
+- [Controllers](./controllers) - Learn about the API layer
+- [DAOs](./dao) - Understand database interactions
+- [Testing](/development/testing) - Learn about testing strategies

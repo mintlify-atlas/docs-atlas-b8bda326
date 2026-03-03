@@ -1,0 +1,171 @@
+---
+title: Admin API
+description: Admin-only endpoints for platform management and maintenance mode control
+---
+
+## Overview
+
+The Admin API provides system administration endpoints for managing platform settings, maintenance mode, and generating platform reports. All endpoints require admin or support team permissions.
+
+<Warning>
+All endpoints in this API require elevated permissions (system admin or support team member). Unauthorized access will result in a `ForbiddenAccessException`.
+</Warning>
+
+## Get Platform Report Stats
+
+Retrieve comprehensive platform statistics for a specified time period.
+
+**Endpoint:** `POST /api/admin/platformReportStats/`
+
+**Permissions:** System Admin only
+
+### Parameters
+
+<ParamField path="start_time" type="int" optional>
+  Start time for the report period (Unix timestamp). Defaults to first day of current January.
+</ParamField>
+
+<ParamField path="end_time" type="int" optional>
+  End time for the report period (Unix timestamp). Defaults to current time.
+</ParamField>
+
+### Response
+
+<ResponseField name="report" type="object">
+  Platform statistics for the specified period
+  
+  <ResponseField name="activeUsers" type="object">
+    Active users grouped by gender (e.g., `{"male": 100, "female": 80, "other": 20}`)
+  </ResponseField>
+  
+  <ResponseField name="acceptedSubmissions" type="int">
+    Total number of accepted submissions
+  </ResponseField>
+  
+  <ResponseField name="activeSchools" type="int">
+    Number of active schools
+  </ResponseField>
+  
+  <ResponseField name="courses" type="int">
+    Total number of courses created
+  </ResponseField>
+  
+  <ResponseField name="omiCourse" type="object">
+    Statistics for the OMI course
+    
+    <ResponseField name="attemptedUsers" type="int">
+      Number of users who attempted the course
+    </ResponseField>
+    
+    <ResponseField name="passedUsers" type="int">
+      Number of users who passed (>70% completion)
+    </ResponseField>
+    
+    <ResponseField name="completedUsers" type="int">
+      Number of users who completed (100%)
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+## Set Maintenance Mode
+
+Enable or disable platform maintenance mode with custom messages.
+
+**Endpoint:** `POST /api/admin/setMaintenanceMode/`
+
+**Permissions:** Support Team Member
+
+### Parameters
+
+<ParamField path="enabled" type="bool" optional>
+  Enable or disable maintenance mode. Defaults to `false`.
+</ParamField>
+
+<ParamField path="message_es" type="string" optional>
+  Maintenance message in Spanish
+</ParamField>
+
+<ParamField path="message_en" type="string" optional>
+  Maintenance message in English
+</ParamField>
+
+<ParamField path="message_pt" type="string" optional>
+  Maintenance message in Portuguese
+</ParamField>
+
+<ParamField path="type" type="string" optional>
+  Message type for styling. One of: `info`, `warning`, `danger`. Defaults to `info`.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns `"ok"` on success
+</ResponseField>
+
+### Example
+
+```json
+{
+  "enabled": true,
+  "message_es": "Mantenimiento programado",
+  "message_en": "Scheduled maintenance",
+  "message_pt": "Manutenção programada",
+  "type": "warning"
+}
+```
+
+## Get Maintenance Mode
+
+Retrieve current maintenance mode status and messages.
+
+**Endpoint:** `POST /api/admin/getMaintenanceMode/`
+
+**Permissions:** Support Team Member
+
+### Response
+
+<ResponseField name="enabled" type="bool">
+  Whether maintenance mode is currently enabled
+</ResponseField>
+
+<ResponseField name="message_es" type="string|null">
+  Maintenance message in Spanish
+</ResponseField>
+
+<ResponseField name="message_en" type="string|null">
+  Maintenance message in English
+</ResponseField>
+
+<ResponseField name="message_pt" type="string|null">
+  Maintenance message in Portuguese
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Message type: `info`, `warning`, or `danger`
+</ResponseField>
+
+## Maintenance Templates
+
+The platform provides predefined maintenance message templates:
+
+### Scheduled Maintenance (info)
+- **ES:** Estamos realizando mantenimiento programado. Esperamos volver a estar en línea pronto.
+- **EN:** We are performing scheduled maintenance. We expect to be back online soon.
+- **PT:** Estamos realizando manutenção programada. Esperamos voltar a ficar online em breve.
+
+### Grader Unavailable (warning)
+- **ES:** Sistema de evaluación temporalmente no disponible. Guarda tu código localmente.
+- **EN:** Grader system temporarily unavailable. Please save your code locally.
+- **PT:** Sistema de avaliação temporariamente indisponível. Salve seu código localmente.
+
+### Service Unavailable (danger)
+- **ES:** Estamos experimentando problemas técnicos con nuestros proveedores de infraestructura.
+- **EN:** We are experiencing technical issues with our infrastructure providers.
+- **PT:** Estamos enfrentando problemas técnicos com nossos provedores de infraestrutura.
+
+## Notes
+
+- Maintenance messages persist in cache until explicitly disabled
+- Messages are automatically displayed to users based on their language preference
+- The maintenance system supports Spanish (es), English (en), and Portuguese (pt)

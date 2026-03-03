@@ -1,0 +1,343 @@
+---
+title: Course management
+description: Create structured learning paths with assignments, progress tracking, and automated grading
+---
+
+## Overview
+
+omegaUp's course management system enables educators to create comprehensive programming courses with multiple assignments, student enrollment, progress tracking, and automated grading. Courses provide a structured learning environment beyond individual contests.
+
+## Courses vs contests
+
+While contests and courses share some similarities, they serve different purposes:
+
+| Feature | Contest | Course |
+|---------|---------|--------|
+| **Duration** | Fixed time window | Ongoing, multiple assignments |
+| **Structure** | Single event | Multiple assignments/modules |
+| **Enrollment** | Registration or invitation | Student enrollment with access codes |
+| **Progress tracking** | Single scoreboard | Per-assignment progress and overall metrics |
+| **Use case** | Competitions, assessments | Long-term learning, curriculum |
+| **Grading** | Immediate competitive ranking | Cumulative progress tracking |
+
+## Creating a course
+
+<Steps>
+  <Step title="Course setup">
+    Define course name, description, start/end dates, and visibility settings
+    
+    ```json
+    {
+      "alias": "intro-to-algorithms",
+      "name": "Introduction to Algorithms",
+      "description": "Comprehensive course covering fundamental algorithms and data structures",
+      "start_time": "2024-01-15T00:00:00Z",
+      "finish_time": "2024-06-30T23:59:59Z",
+      "is_public": true,
+      "show_scoreboard": true
+    }
+    ```
+  </Step>
+  
+  <Step title="Add assignments">
+    Create assignments (similar to contests) with problems, deadlines, and point values
+  </Step>
+  
+  <Step title="Enroll students">
+    Add students individually, in bulk, or via registration codes
+  </Step>
+  
+  <Step title="Monitor progress">
+    Track student submissions, scores, and completion rates
+  </Step>
+  
+  <Step title="Issue grades">
+    Review final scores and export grade reports
+  </Step>
+</Steps>
+
+## Assignment types
+
+Courses support different assignment formats:
+
+<AccordionGroup>
+  <Accordion title="Homework assignments">
+    Extended deadlines (days to weeks) for practice and learning. Students can attempt problems multiple times with instant feedback.
+  </Accordion>
+
+  <Accordion title="Exams">
+    Time-limited assessments with restricted submission counts. Can enable/disable scoreboard visibility during exam periods.
+  </Accordion>
+
+  <Accordion title="Practice sets">
+    Optional problem sets for additional practice. May not count toward final grade or have relaxed deadlines.
+  </Accordion>
+
+  <Accordion title="Projects">
+    Long-term assignments with complex problems or multi-stage challenges.
+  </Accordion>
+</AccordionGroup>
+
+## Student enrollment
+
+### Enrollment methods
+
+<Tabs>
+  <Tab title="Individual enrollment">
+    Manually add students one at a time using their omegaUp usernames or emails.
+    
+    ```php
+    CourseController::apiAddStudent([
+        'course_alias' => 'intro-to-algorithms',
+        'usernameOrEmail' => 'student@university.edu'
+    ]);
+    ```
+  </Tab>
+
+  <Tab title="Bulk enrollment">
+    Upload CSV file with student information for batch enrollment.
+    
+    ```csv
+    username,email,name
+    student1,student1@university.edu,John Doe
+    student2,student2@university.edu,Jane Smith
+    ```
+  </Tab>
+
+  <Tab title="Registration codes">
+    Generate unique codes that students can use to self-enroll.
+    
+    ```json
+    {
+      "registration_code": "ABC123XYZ",
+      "valid_until": "2024-01-31T23:59:59Z",
+      "max_uses": 50
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  Registration codes are ideal for large courses where you want students to self-enroll without manual administration.
+</Tip>
+
+## Assignment configuration
+
+### Basic settings
+
+<ParamField path="name" type="string" required>
+  Assignment name displayed to students
+</ParamField>
+
+<ParamField path="description" type="string">
+  Assignment instructions in Markdown
+</ParamField>
+
+<ParamField path="start_time" type="datetime" required>
+  When students can begin the assignment
+</ParamField>
+
+<ParamField path="finish_time" type="datetime" required>
+  Assignment deadline (soft or hard depending on configuration)
+</ParamField>
+
+<ParamField path="max_points" type="number">
+  Maximum points achievable (calculated from problems if not specified)
+</ParamField>
+
+### Advanced options
+
+<CardGroup cols={2}>
+  <Card title="Late submissions" icon="clock">
+    Allow submissions after deadline with optional point penalties
+  </Card>
+  <Card title="Submission limits" icon="hashtag">
+    Restrict number of attempts per problem (useful for exams)
+  </Card>
+  <Card title="Scoreboard visibility" icon="eye">
+    Show/hide scoreboard to students during assignment
+  </Card>
+  <Card title="Feedback mode" icon="comment">
+    Control when students see test case results (immediate or after deadline)
+  </Card>
+</CardGroup>
+
+## Progress tracking
+
+### Student dashboard
+
+Students see:
+
+- **Overall course progress**: Percentage of completed assignments
+- **Assignment list**: Upcoming, active, and past assignments
+- **Current scores**: Points earned vs maximum possible
+- **Problem status**: Which problems have been solved
+- **Deadlines**: Visual indicators for approaching due dates
+
+### Instructor dashboard
+
+Instructors can track:
+
+```json
+{
+  "total_students": 45,
+  "active_students": 42,
+  "assignments_completed": 8,
+  "average_score": 87.3,
+  "completion_rate": 0.93
+}
+```
+
+<AccordionGroup>
+  <Accordion title="Overall statistics">
+    Course-wide metrics including enrollment, participation rates, and average scores
+  </Accordion>
+
+  <Accordion title="Per-assignment analytics">
+    Detailed breakdown of each assignment: submission counts, solve rates, common errors
+  </Accordion>
+
+  <Accordion title="Student performance">
+    Individual student progress, strengths, weaknesses, and submission patterns
+  </Accordion>
+
+  <Accordion title="Problem difficulty analysis">
+    Identify which problems are too easy or too hard based on student performance
+  </Accordion>
+</AccordionGroup>
+
+## Grading system
+
+### Automatic grading
+
+All assignments are automatically graded based on test case results:
+
+- **Immediate feedback**: Students see results instantly (unless configured otherwise)
+- **Partial credit**: Award points for partially correct solutions
+- **Test case visibility**: Control which test cases students can see
+- **Multiple attempts**: Allow students to improve their solutions
+
+### Grade calculation
+
+Final course grades can be calculated using different methods:
+
+<Tabs>
+  <Tab title="Total points">
+    Sum of all assignment scores
+    
+    ```
+    Final Grade = Σ(Assignment Points) / Total Possible Points
+    ```
+  </Tab>
+
+  <Tab title="Weighted average">
+    Different assignments have different weights
+    
+    ```
+    Final Grade = Σ(Assignment Points × Weight) / Σ(Max Points × Weight)
+    ```
+  </Tab>
+
+  <Tab title="Best N assignments">
+    Count only the best performing assignments
+    
+    ```
+    Final Grade = Sum of top N assignment scores / (N × Max Points)
+    ```
+  </Tab>
+</Tabs>
+
+### Grade export
+
+Export student grades in multiple formats:
+
+```csv
+username,name,assignment1,assignment2,assignment3,total,percentage
+student1,John Doe,95,87,92,274,91.3%
+student2,Jane Smith,88,95,85,268,89.3%
+```
+
+## Course cloning
+
+Reuse course structure across semesters:
+
+<Steps>
+  <Step title="Select source course">
+    Choose the course you want to clone
+  </Step>
+  
+  <Step title="Configure clone settings">
+    Decide what to copy: problems, assignments, students, or structure only
+  </Step>
+  
+  <Step title="Set new dates">
+    Adjust all assignment dates for the new semester
+  </Step>
+  
+  <Step title="Review and create">
+    Verify settings and create the cloned course
+  </Step>
+</Steps>
+
+<Info>
+  Course cloning saves time when teaching recurring courses. Student enrollments and submissions are not copied.
+</Info>
+
+## Best practices
+
+### Course structure
+
+- **Weekly assignments**: One assignment per week with 3-5 problems
+- **Gradual difficulty**: Start with easier problems, increase complexity over time
+- **Topic grouping**: Group related problems in the same assignment
+- **Clear deadlines**: Set consistent deadline patterns (e.g., every Sunday at 11:59 PM)
+
+### Student success
+
+<CardGroup cols={2}>
+  <Card title="Sample solutions" icon="file-code">
+    Provide example solutions after deadlines
+  </Card>
+  <Card title="Office hours" icon="calendar">
+    Schedule regular help sessions for struggling students
+  </Card>
+  <Card title="Practice problems" icon="dumbbell">
+    Include optional bonus problems for advanced students
+  </Card>
+  <Card title="Clear instructions" icon="book-open">
+    Write detailed assignment descriptions with examples
+  </Card>
+</CardGroup>
+
+## Course API
+
+Manage courses programmatically:
+
+```bash
+# Create a course
+curl https://omegaup.com/api/course/create/ \
+  -H "Cookie: ouat=$AUTH_TOKEN" \
+  -d alias=intro-algorithms \
+  -d name="Introduction to Algorithms"
+
+# Get student progress
+curl https://omegaup.com/api/course/studentProgress/ \
+  -H "Cookie: ouat=$AUTH_TOKEN" \
+  -d course_alias=intro-algorithms \
+  -d username=student1
+```
+
+<Card title="Course API reference" icon="code" href="/api/course">
+  Complete API documentation for course management
+</Card>
+
+## Additional resources
+
+<CardGroup cols={2}>
+  <Card title="Managing courses guide" icon="chalkboard-user" href="/guides/managing-courses">
+    Detailed guide on course administration and best practices
+  </Card>
+  <Card title="Creating problems" icon="pencil" href="/guides/creating-problems">
+    Learn to create custom problems for your courses
+  </Card>
+</CardGroup>

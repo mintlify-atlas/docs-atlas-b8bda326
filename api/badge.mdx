@@ -1,0 +1,130 @@
+---
+title: Badge API
+description: API endpoints for managing user badges and achievements
+---
+
+## Overview
+
+The Badge API provides endpoints to list available badges, retrieve badge details, and view badges owned by users.
+
+## List All Badges
+
+Returns a list of all existing badges in the system.
+
+**Endpoint:** `GET /api/badge/list`
+
+**Authentication:** Not required
+
+### Response
+
+Returns an array of badge alias strings.
+
+## List My Badges
+
+Returns a list of badges owned by the current user.
+
+**Endpoint:** `GET /api/badge/myList`
+
+**Authentication:** Required
+
+### Response
+
+<ResponseField name="badges" type="array">
+  Array of badge objects owned by the user
+  
+  <ResponseField name="badge_alias" type="string">
+    Unique identifier for the badge
+  </ResponseField>
+  
+  <ResponseField name="assignation_time" type="timestamp|null">
+    When the badge was assigned to the user
+  </ResponseField>
+  
+  <ResponseField name="first_assignation" type="timestamp|null">
+    When the badge was first assigned to any user
+  </ResponseField>
+  
+  <ResponseField name="owners_count" type="int">
+    Number of users who own this badge
+  </ResponseField>
+  
+  <ResponseField name="total_users" type="int">
+    Total number of users in the system
+  </ResponseField>
+</ResponseField>
+
+## List User Badges
+
+Returns a list of badges owned by a specific user.
+
+**Endpoint:** `GET /api/badge/userList`
+
+**Authentication:** Not required
+
+### Parameters
+
+<ParamField path="target_username" type="string" required>
+  Username of the user whose badges to retrieve
+</ParamField>
+
+### Response
+
+<ResponseField name="badges" type="array">
+  Array of badge objects owned by the specified user (same structure as myList)
+</ResponseField>
+
+## Get Badge Assignation Time
+
+Returns the assignation timestamp of a specific badge for the current user.
+
+**Endpoint:** `GET /api/badge/myBadgeAssignationTime`
+
+**Authentication:** Required
+
+### Parameters
+
+<ParamField path="badge_alias" type="string" required>
+  Alias of the badge
+</ParamField>
+
+### Response
+
+<ResponseField name="assignation_time" type="timestamp|null">
+  When the badge was assigned to the user, or null if not owned
+</ResponseField>
+
+## Get Badge Details
+
+Returns detailed information about a specific badge.
+
+**Endpoint:** `GET /api/badge/badgeDetails`
+
+**Authentication:** Not required
+
+### Parameters
+
+<ParamField path="badge_alias" type="string" required>
+  Alias of the badge
+</ParamField>
+
+### Response
+
+<ResponseField name="badge_alias" type="string">
+  Unique identifier for the badge
+</ResponseField>
+
+<ResponseField name="assignation_time" type="timestamp|null">
+  Always null for this endpoint
+</ResponseField>
+
+<ResponseField name="first_assignation" type="timestamp|null">
+  When the badge was first assigned to any user
+</ResponseField>
+
+<ResponseField name="owners_count" type="int">
+  Number of users who own this badge
+</ResponseField>
+
+<ResponseField name="total_users" type="int">
+  Total number of users in the system
+</ResponseField>

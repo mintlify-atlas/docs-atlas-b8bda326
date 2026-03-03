@@ -1,0 +1,669 @@
+---
+title: TypeScript Usage and Guidelines
+description: TypeScript configuration, patterns, and best practices for omegaUp
+---
+
+# TypeScript Usage and Guidelines
+
+omegaUp uses TypeScript 4.4.4 to provide type safety, better developer experience, and improved code quality across the frontend codebase.
+
+## TypeScript Configuration
+
+The project's TypeScript configuration is defined in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "outDir": "./built/",
+    "sourceMap": true,
+    "target": "es6",
+    "downlevelIteration": true,
+    "strict": true,
+    "lib": ["DOM", "ES5", "ScriptHost", "ES2020.Promise", "dom.iterable"],
+    "types": ["bootstrap-datepicker", "bootstrap.v3.datetimepicker"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "listFiles": true,
+    "baseUrl": ".",
+    "allowSyntheticDefaultImports": true,
+    "importHelpers": true,
+    "paths": {
+      "@/*": ["frontend/www/*"]
+    }
+  },
+  "include": [
+    "./frontend/www/js/omegaup/**/*.vue",
+    "./frontend/www/**/*.ts"
+  ],
+  "exclude": [
+    "./node_modules",
+    "./cypress",
+    "./frontend/www/js/omegaup/components/**/**/*.stories.ts"
+  ]
+}
+```
+
+### Key Configuration Options
+
+#### Strict Mode
+```json
+"strict": true
+```
+
+Enables all strict type checking options:
+- `strictNullChecks` - null and undefined are not assignable to other types
+- `strictFunctionTypes` - function parameter types are checked contravariantly
+- `strictBindCallApply` - strict checking of bind, call, and apply
+- `strictPropertyInitialization` - class properties must be initialized
+- `noImplicitThis` - error on 'this' with implied 'any' type
+- `alwaysStrict` - parse in strict mode and emit "use strict"
+
+#### Experimental Decorators
+```json
+"experimentalDecorators": true
+```
+
+Required for vue-property-decorator usage:
+```typescript
+@Component
+@Prop()
+@Watch()
+```
+
+#### Module Resolution
+```json
+"module": "esnext",
+"moduleResolution": "node"
+```
+
+Uses Node.js module resolution with ES module syntax.
+
+#### Path Aliases
+```json
+"paths": {
+  "@/*": ["frontend/www/*"]
+}
+```
+
+Allows importing with `@/` prefix:
+```typescript
+import api from '@/js/omegaup/api';
+```
+
+#### Target
+```json
+"target": "es6"
+```
+
+Compiles to ES6 (ES2015) for modern browser support.
+
+## Type Definitions
+
+### API Types
+
+omegaUp maintains comprehensive type definitions for API responses in `api_types.ts`:
+
+```typescript
+// Example type definitions
+export interface Problem {
+  alias: string;
+  title: string;
+  difficulty: number;
+  visibility: number;
+  quality_seal: boolean;
+  points: number;
+  submissions: number;
+  accepted: number;
+  ratio: number;
+}
+
+export interface Contest {
+  alias: string;
+  title: string;
+  description: string;
+  start_time: Date;
+  finish_time: Date;
+  scoreboard_url: string;
+  scoreboard_url_admin: string;
+}
+
+export interface User {
+  username: string;
+  name?: string;
+  email?: string;
+  country_id?: string;
+  verified: boolean;
+}
+```
+
+### Component Props Types
+
+Define interfaces for component props:
+
+```typescript
+interface Props {
+  problemAlias: string;
+  showDifficulty: boolean;
+  allowEditing?: boolean;
+}
+
+@Component
+export default class ProblemCard extends Vue {
+  @Prop() problemAlias!: string;
+  @Prop() showDifficulty!: boolean;
+  @Prop({ default: false }) allowEditing!: boolean;
+}
+```
+
+### Custom Type Declarations
+
+For third-party libraries without types, omegaUp includes `.d.ts` declaration files:
+
+```typescript
+// vue-shims.d.ts
+declare module '*.vue' {
+  import Vue from 'vue';
+  export default Vue;
+}
+
+// vue-property-decorator.d.ts
+declare module 'vue-property-decorator' {
+  export const Component: any;
+  export const Prop: any;
+  export const Watch: any;
+}
+```
+
+## TypeScript Patterns
+
+### Type Assertions
+
+```typescript
+// Type assertion when you know the type
+const element = document.getElementById('app') as HTMLElement;
+
+// Non-null assertion when you're certain value exists
+const value = this.optionalValue!;
+
+// Prefer type guards over assertions
+function isUser(obj: any): obj is User {
+  return obj && typeof obj.username === 'string';
+}
+
+if (isUser(data)) {
+  // TypeScript knows data is User here
+  console.log(data.username);
+}
+```
+
+### Union Types
+
+```typescript
+// String literal union
+type Difficulty = 'easy' | 'medium' | 'hard';
+
+// Object union
+type Result = Success | Error;
+
+interface Success {
+  status: 'success';
+  data: any;
+}
+
+interface Error {
+  status: 'error';
+  message: string;
+}
+
+// Type narrowing
+function handleResult(result: Result): void {
+  if (result.status === 'success') {
+    console.log(result.data); // TypeScript knows this is Success
+  } else {
+    console.log(result.message); // TypeScript knows this is Error
+  }
+}
+```
+
+### Generics
+
+```typescript
+// Generic function
+function getFirst<T>(items: T[]): T | undefined {
+  return items[0];
+}
+
+const firstProblem = getFirst<Problem>(problems);
+
+// Generic interface
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  error?: string;
+}
+
+type ProblemResponse = ApiResponse<Problem>;
+type ContestResponse = ApiResponse<Contest>;
+
+// Generic class
+class Store<T> {
+  private items: T[] = [];
+  
+  add(item: T): void {
+    this.items.push(item);
+  }
+  
+  getAll(): T[] {
+    return this.items;
+  }
+}
+```
+
+### Utility Types
+
+```typescript
+// Partial: Make all properties optional
+type PartialUser = Partial<User>;
+
+// Required: Make all properties required
+type RequiredUser = Required<User>;
+
+// Pick: Select specific properties
+type UserCredentials = Pick<User, 'username' | 'email'>;
+
+// Omit: Exclude specific properties
+type UserWithoutEmail = Omit<User, 'email'>;
+
+// Record: Object with specific key-value types
+type UserMap = Record<string, User>;
+
+// ReturnType: Extract return type from function
+type Result = ReturnType<typeof fetchData>;
+```
+
+### Async/Await
+
+```typescript
+// Async function with typed return
+async function fetchProblem(alias: string): Promise<Problem> {
+  const response = await api.Problem.details({ problem_alias: alias });
+  return response.data;
+}
+
+// Error handling
+async function safeFetch(alias: string): Promise<Problem | null> {
+  try {
+    const problem = await fetchProblem(alias);
+    return problem;
+  } catch (error) {
+    console.error('Failed to fetch problem:', error);
+    return null;
+  }
+}
+```
+
+## Vue Component TypeScript Patterns
+
+### Component Class
+
+```typescript
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
+import { Problem } from '@/js/omegaup/api_types';
+
+@Component({
+  components: {
+    'problem-card': ProblemCard,
+  },
+})
+export default class ProblemList extends Vue {
+  // Props with type inference
+  @Prop() problems!: Problem[];
+  @Prop({ default: 10 }) pageSize!: number;
+  
+  // Data properties with types
+  private currentPage: number = 1;
+  private loading: boolean = false;
+  private error: string | null = null;
+  
+  // Computed property with return type
+  get visibleProblems(): Problem[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    return this.problems.slice(start, end);
+  }
+  
+  // Method with typed parameters and return
+  handlePageChange(page: number): void {
+    this.currentPage = page;
+    this.$emit('page-change', page);
+  }
+  
+  // Async method
+  async loadProblems(): Promise<void> {
+    this.loading = true;
+    try {
+      const response = await api.Problem.list({});
+      this.$emit('problems-loaded', response.data);
+    } catch (error) {
+      this.error = 'Failed to load problems';
+    } finally {
+      this.loading = false;
+    }
+  }
+  
+  // Watcher with typed parameters
+  @Watch('problems')
+  onProblemsChange(newProblems: Problem[], oldProblems: Problem[]): void {
+    console.log(`Problems changed from ${oldProblems.length} to ${newProblems.length}`);
+  }
+  
+  // Lifecycle hook
+  mounted(): void {
+    this.loadProblems();
+  }
+}
+```
+
+### Refs and DOM Access
+
+```typescript
+@Component
+export default class InputForm extends Vue {
+  // Reference to input element
+  $refs!: {
+    input: HTMLInputElement;
+    form: HTMLFormElement;
+  };
+  
+  focusInput(): void {
+    this.$refs.input.focus();
+  }
+  
+  submitForm(): void {
+    this.$refs.form.submit();
+  }
+}
+```
+
+### Vuex Store Types
+
+```typescript
+import { Store } from 'vuex';
+
+interface RootState {
+  user: User | null;
+  problems: Problem[];
+  loading: boolean;
+}
+
+@Component
+export default class MyComponent extends Vue {
+  get store(): Store<RootState> {
+    return this.$store;
+  }
+  
+  get currentUser(): User | null {
+    return this.store.state.user;
+  }
+}
+```
+
+## API Type Safety
+
+The `api.ts` file provides type-safe API calls:
+
+```typescript
+// API call with typed parameters and response
+interface ProblemDetailsRequest {
+  problem_alias: string;
+  lang?: string;
+}
+
+interface ProblemDetailsResponse {
+  status: string;
+  data: Problem;
+}
+
+class ProblemAPI {
+  async details(
+    params: ProblemDetailsRequest
+  ): Promise<ProblemDetailsResponse> {
+    return await fetch('/api/problem/details/', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }).then(r => r.json());
+  }
+}
+
+// Usage with full type safety
+const response = await api.Problem.details({
+  problem_alias: 'hello-world',
+});
+
+const problem: Problem = response.data; // Type-safe!
+```
+
+## Best Practices
+
+### 1. Always Use Types
+
+```typescript
+// ❌ Avoid
+function process(data: any): any {
+  return data.map((x: any) => x.value);
+}
+
+// ✅ Prefer
+interface DataItem {
+  value: string;
+}
+
+function process(data: DataItem[]): string[] {
+  return data.map(x => x.value);
+}
+```
+
+### 2. Use Type Inference
+
+```typescript
+// ❌ Redundant
+const username: string = 'john';
+const count: number = problems.length;
+
+// ✅ Let TypeScript infer
+const username = 'john'; // inferred as string
+const count = problems.length; // inferred as number
+
+// ✅ Explicitly type when needed
+const result: Problem | null = await fetchProblem();
+```
+
+### 3. Avoid Type Assertions
+
+```typescript
+// ❌ Avoid
+const problem = data as Problem;
+
+// ✅ Prefer runtime checks
+function isProblem(obj: any): obj is Problem {
+  return obj && typeof obj.alias === 'string';
+}
+
+if (isProblem(data)) {
+  // Safe to use as Problem
+}
+```
+
+### 4. Use Strict Null Checks
+
+```typescript
+// ❌ Avoid
+function getUsername(user: User): string {
+  return user.name; // May be undefined!
+}
+
+// ✅ Handle nullable types
+function getUsername(user: User): string {
+  return user.name ?? user.username;
+}
+
+// ✅ Use optional chaining
+function getEmail(user: User | null): string | undefined {
+  return user?.email;
+}
+```
+
+### 5. Type Function Parameters
+
+```typescript
+// ❌ Avoid
+function formatDate(date) {
+  return date.toLocaleDateString();
+}
+
+// ✅ Type parameters
+function formatDate(date: Date): string {
+  return date.toLocaleDateString();
+}
+
+// ✅ Support multiple types with union
+function formatDate(date: Date | string | number): string {
+  const d = date instanceof Date ? date : new Date(date);
+  return d.toLocaleDateString();
+}
+```
+
+### 6. Create Reusable Types
+
+```typescript
+// Define once, use everywhere
+type Timestamp = number;
+type Username = string;
+type ProblemAlias = string;
+
+interface Contest {
+  alias: string;
+  start_time: Timestamp;
+  created_by: Username;
+}
+
+interface Problem {
+  alias: ProblemAlias;
+  creation_date: Timestamp;
+  author: Username;
+}
+```
+
+### 7. Document Complex Types
+
+```typescript
+/**
+ * Represents a submission verdict
+ * CE = Compilation Error
+ * AC = Accepted
+ * WA = Wrong Answer
+ * TLE = Time Limit Exceeded
+ */
+type Verdict = 'CE' | 'AC' | 'WA' | 'TLE' | 'MLE' | 'RTE';
+
+/**
+ * Configuration for problem difficulty filtering
+ */
+interface DifficultyFilter {
+  /** Minimum difficulty (0-4) */
+  min: number;
+  /** Maximum difficulty (0-4) */
+  max: number;
+  /** Include problems without difficulty rating */
+  includeUnrated: boolean;
+}
+```
+
+## Type Errors and Solutions
+
+### Common Error: Property does not exist
+
+```typescript
+// Error: Property 'name' does not exist on type 'User'
+const name = user.name;
+
+// Solution: Make property optional or add null check
+interface User {
+  username: string;
+  name?: string; // Optional property
+}
+
+const name = user.name ?? user.username;
+```
+
+### Common Error: Type 'null' is not assignable
+
+```typescript
+// Error: Type 'null' is not assignable to type 'string'
+let username: string = null;
+
+// Solution: Use union type
+let username: string | null = null;
+```
+
+### Common Error: Object is possibly undefined
+
+```typescript
+// Error: Object is possibly 'undefined'
+const element = document.getElementById('app');
+element.innerHTML = 'Hello';
+
+// Solution: Add null check
+const element = document.getElementById('app');
+if (element) {
+  element.innerHTML = 'Hello';
+}
+
+// Or use non-null assertion (when you're certain)
+const element = document.getElementById('app')!;
+element.innerHTML = 'Hello';
+```
+
+## Type Checking in CI/CD
+
+TypeScript type checking runs during the webpack build:
+
+```json
+// package.json
+{
+  "scripts": {
+    "build": "webpack --mode=production",
+    "dev": "webpack --config-name=frontend --mode=development"
+  }
+}
+```
+
+The `ForkTsCheckerWebpackPlugin` checks types in parallel:
+
+```javascript
+new ForkTsCheckerWebpackPlugin({
+  typescript: {
+    extensions: {
+      vue: true,
+    },
+  },
+  formatter: 'codeframe',
+  async: false,
+})
+```
+
+## IDE Integration
+
+For the best TypeScript experience:
+
+1. **VS Code**: Install the Vue and TypeScript extensions
+2. **Webstorm**: TypeScript support is built-in
+3. **Vim/Neovim**: Use coc.nvim with coc-tsserver
+
+## Related Documentation
+
+- [Frontend Architecture Overview](/development/frontend/overview)
+- [Vue Component Development](/development/frontend/vue-components)
+- [Storybook Documentation](/development/frontend/storybook)

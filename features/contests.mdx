@@ -1,0 +1,253 @@
+---
+title: Contest system
+description: Create and manage competitive programming contests with flexible configurations and real-time scoreboards
+---
+
+## Overview
+
+omegaUp's contest system allows you to organize competitive programming events ranging from small classroom exercises to large-scale competitions with hundreds of participants. The platform provides real-time scoreboards, clarifications, and comprehensive administration tools.
+
+## Contest types
+
+<AccordionGroup>
+  <Accordion title="Public contests">
+    Open to all users. Anyone can register and participate. Great for community events, practice competitions, and public challenges.
+  </Accordion>
+
+  <Accordion title="Private contests">
+    Invitation-only contests. Perfect for classroom assignments, team selection, or private training sessions. Access controlled via explicit user or group invitations.
+  </Accordion>
+
+  <Accordion title="Registration contests">
+    Contests that require registration before a deadline. Useful for limiting participants or collecting participant information.
+  </Accordion>
+
+  <Accordion title="Virtual contests">
+    Practice contests where users can start at any time and compete against the original scoreboard. Great for training and self-assessment.
+  </Accordion>
+</AccordionGroup>
+
+## Contest configuration
+
+### Basic settings
+
+Configure your contest with these essential options:
+
+<ParamField path="title" type="string" required>
+  Contest name displayed to participants
+</ParamField>
+
+<ParamField path="description" type="string">
+  Detailed description in Markdown format
+</ParamField>
+
+<ParamField path="start_time" type="datetime" required>
+  When the contest begins (ISO 8601 format)
+</ParamField>
+
+<ParamField path="finish_time" type="datetime" required>
+  When the contest ends
+</ParamField>
+
+<ParamField path="window_length" type="integer">
+  Optional window length in minutes for virtual participation
+</ParamField>
+
+### Scoring modes
+
+Choose from different scoring systems:
+
+<Tabs>
+  <Tab title="Partial scoring">
+    Awards partial points based on test cases passed. Default mode for most contests.
+    
+    ```json
+    {
+      "points_decay_factor": 0.0,
+      "partial_score": true,
+      "submissions_gap": 0
+    }
+    ```
+  </Tab>
+
+  <Tab title="All-or-nothing">
+    Problems are worth full points only if all test cases pass.
+    
+    ```json
+    {
+      "partial_score": false
+    }
+    ```
+  </Tab>
+
+  <Tab title="Points decay">
+    Points decrease over time to encourage early submissions.
+    
+    ```json
+    {
+      "points_decay_factor": 0.05,
+      "partial_score": true
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Penalty modes
+
+Control how wrong submissions affect scores:
+
+- **None**: No penalty for incorrect submissions
+- **Contest start**: Penalty time from contest start
+- **Problem open**: Penalty time from when you first opened the problem
+- **Runtime**: Penalty based on submission execution time
+- **Sum**: Sum of all wrong submission times
+
+### Contest visibility
+
+<CardGroup cols={3}>
+  <Card title="Public" icon="globe">
+    Listed in contest directory, anyone can view
+  </Card>
+  <Card title="Private" icon="lock">
+    Only invited users can access
+  </Card>
+  <Card title="Registration" icon="user-plus">
+    Requires registration before participation
+  </Card>
+</CardGroup>
+
+## Problem management
+
+### Adding problems
+
+Add problems to your contest with specific configurations:
+
+```php
+// From Contest.php controller
+ContestController::apiAddProblem([
+    'contest_alias' => 'my-contest',
+    'problem_alias' => 'sum-problem',
+    'points' => 100,
+    'order_in_contest' => 1
+]);
+```
+
+<ParamField path="points" type="integer" default="100">
+  Maximum points for this problem in the contest
+</ParamField>
+
+<ParamField path="order_in_contest" type="integer">
+  Display order (1, 2, 3...). Problems will show as A, B, C...
+</ParamField>
+
+### Problem ordering
+
+Problems are displayed alphabetically (A, B, C, D...) based on their order. You can:
+
+- Reorder problems at any time (even during the contest)
+- Set custom point values per problem
+- Remove problems (won't delete submissions)
+
+## Scoreboard features
+
+### Real-time updates
+
+The scoreboard updates in real-time showing:
+
+- **Current standings**: User rankings with total scores
+- **Problem status**: Color-coded problem attempts (green = solved, red = failed, gray = not attempted)
+- **Time information**: Submission times and penalties
+- **Score details**: Points earned per problem
+
+### Scoreboard modes
+
+<Tabs>
+  <Tab title="Cumulative">
+    Shows total accumulated score for each participant
+  </Tab>
+  
+  <Tab title="ICPCrules">
+    ICPC-style scoring with solve count and penalty time
+  </Tab>
+  
+  <Tab title="All runs">
+    Shows every submission with detailed results
+  </Tab>
+</Tabs>
+
+## Clarifications system
+
+Participants can request clarifications during the contest:
+
+<Steps>
+  <Step title="Participant asks question">
+    Users submit questions about problem statements or contest rules
+  </Step>
+  
+  <Step title="Admin reviews">
+    Contest administrators see all clarification requests
+  </Step>
+  
+  <Step title="Public or private response">
+    Admins can respond publicly (visible to all) or privately (visible only to requester)
+  </Step>
+  
+  <Step title="Real-time notification">
+    Participants see clarifications immediately in the contest interface
+  </Step>
+</Steps>
+
+<Warning>
+  Clarification responses marked as public are visible to all contest participants. Be careful not to reveal solution hints.
+</Warning>
+
+## Contest administration
+
+### Admin roles
+
+- **Contest creator**: Full control over all aspects
+- **Contest admins**: Can manage problems, users, and settings
+- **Problem admins**: Limited to specific problem management
+
+### Admin capabilities
+
+<CardGroup cols={2}>
+  <Card title="Manage participants" icon="users">
+    Add/remove users and groups, view participation stats
+  </Card>
+  <Card title="Problem management" icon="list">
+    Add, remove, and reorder contest problems
+  </Card>
+  <Card title="Clarifications" icon="comments">
+    Answer participant questions publicly or privately
+  </Card>
+  <Card title="Generate reports" icon="chart-bar">
+    Export activity reports and submission data
+  </Card>
+</CardGroup>
+
+## Running school contests
+
+For detailed guidance on running contests at educational institutions, see our comprehensive guide:
+
+<Card title="Running contests at your school" icon="school" href="/guides/running-contests">
+  Technical requirements, best practices, and troubleshooting for school contests
+</Card>
+
+## Contest API
+
+Access contests programmatically using the Contest API:
+
+```bash
+# Get contest details
+curl https://omegaup.com/api/contest/details/ \
+  -d contest_alias=my-contest
+
+# Get scoreboard
+curl https://omegaup.com/api/contest/scoreboard/ \
+  -d contest_alias=my-contest
+```
+
+<Card title="Contest API reference" icon="code" href="/api/contest">
+  Complete API documentation for contest management
+</Card>

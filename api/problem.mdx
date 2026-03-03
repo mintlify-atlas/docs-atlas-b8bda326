@@ -1,0 +1,347 @@
+---
+title: Problem API
+description: Problem creation and management endpoints
+---
+
+The Problem API allows you to create, manage, and retrieve programming problems on omegaUp.
+
+## Create Problem
+
+`POST /api/problem/create/`
+
+Creates a new problem. Requires authentication.
+
+<ParamField body="title" type="string" required>
+  Problem title
+</ParamField>
+
+<ParamField body="alias" type="string" required>
+  Problem alias (used in URLs)
+</ParamField>
+
+<ParamField body="source" type="string" required>
+  Problem source (e.g., "UVA", "OMI", "Original")
+</ParamField>
+
+<ParamField body="visibility" type="enum" required>
+  Problem visibility: `public`, `private`, `public_banned`, `private_banned`, `promoted`
+</ParamField>
+
+<ParamField body="languages" type="string" required>
+  Comma-separated list of allowed languages (e.g., "c,cpp,java,py")
+</ParamField>
+
+<ParamField body="validator" type="enum" required>
+  Output validator type: `token`, `token-caseless`, `token-numeric`, `literal`, `custom`
+</ParamField>
+
+<ParamField body="time_limit" type="integer" required>
+  Time limit in milliseconds (TLE)
+</ParamField>
+
+<ParamField body="memory_limit" type="integer" required>
+  Memory limit in kilobytes (MLE)
+</ParamField>
+
+<ParamField body="input_limit" type="integer" optional>
+  Input file size limit in bytes
+</ParamField>
+
+<ParamField body="output_limit" type="integer" optional>
+  Output file size limit in bytes
+</ParamField>
+
+<ParamField body="problem_level" type="string" required>
+  Difficulty level tag (e.g., "problemLevelBasicIntroductionToProgramming")
+</ParamField>
+
+<ParamField body="selected_tags" type="string" optional>
+  JSON array of tag objects with `tagname` and `public` fields
+</ParamField>
+
+<ParamField body="show_diff" type="enum" optional>
+  Show case diffs: `none`, `examples`, `all`
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Get Problem Details
+
+`GET /api/problem/{problem_alias}/`
+
+Returns detailed information about a problem.
+
+<ParamField path="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ParamField query="contest_alias" type="string" optional>
+  Contest context (if viewing within a contest)
+</ParamField>
+
+<ParamField query="lang" type="string" optional>
+  Language for problem statement (default: `es`)
+</ParamField>
+
+<ResponseField name="title" type="string">
+  Problem title
+</ResponseField>
+
+<ResponseField name="alias" type="string">
+  Problem alias
+</ResponseField>
+
+<ResponseField name="validator" type="string">
+  Validator type
+</ResponseField>
+
+<ResponseField name="time_limit" type="integer">
+  Time limit in milliseconds
+</ResponseField>
+
+<ResponseField name="memory_limit" type="integer">
+  Memory limit in KB
+</ResponseField>
+
+<ResponseField name="difficulty" type="float" nullable>
+  Calculated difficulty (0-1)
+</ResponseField>
+
+<ResponseField name="submissions" type="integer">
+  Total submissions
+</ResponseField>
+
+<ResponseField name="accepted" type="integer">
+  Total accepted solutions
+</ResponseField>
+
+<ResponseField name="statement" type="object">
+  Problem statement in markdown format
+  <ResponseField name="markdown" type="string">
+    Problem description in markdown
+  </ResponseField>
+  <ResponseField name="images" type="object">
+    Map of image filenames to base64 data
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="runs" type="array" nullable>
+  User's previous runs for this problem
+</ResponseField>
+
+## Update Problem
+
+`POST /api/problem/update/`
+
+Updates an existing problem. Requires problem admin privileges.
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  Commit message describing the changes
+</ParamField>
+
+<ParamField body="title" type="string" optional>
+  New problem title
+</ParamField>
+
+<ParamField body="source" type="string" optional>
+  New problem source
+</ParamField>
+
+<ParamField body="visibility" type="string" optional>
+  New visibility setting
+</ParamField>
+
+<ParamField body="time_limit" type="integer" optional>
+  New time limit in milliseconds
+</ParamField>
+
+<ParamField body="memory_limit" type="integer" optional>
+  New memory limit in KB
+</ParamField>
+
+<ParamField body="update_published" type="enum" optional>
+  Update scope: `none`, `non_problemset`, `owned_problemsets`, `editable_problemsets`
+</ParamField>
+
+<ResponseField name="rejudged" type="boolean">
+  Whether runs were rejudged
+</ResponseField>
+
+## Add Tag to Problem
+
+`POST /api/problem/addTag/`
+
+Adds a tag to a problem. Requires problem admin privileges.
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Tag name
+</ParamField>
+
+<ParamField body="public" type="boolean" optional>
+  Whether tag is public (default: false)
+</ParamField>
+
+<ResponseField name="name" type="string">
+  The added tag name
+</ResponseField>
+
+## Remove Tag from Problem
+
+`POST /api/problem/removeTag/`
+
+Removes a tag from a problem.
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Tag name to remove
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Get Problem Tags
+
+`GET /api/problem/tags/`
+
+Returns all tags associated with a problem.
+
+<ParamField query="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ParamField query="include_voted" type="boolean" optional>
+  Include user-voted tags
+</ParamField>
+
+<ResponseField name="tags" type="array">
+  Array of tag objects
+  <ResponseField name="name" type="string">
+    Tag name
+  </ResponseField>
+  <ResponseField name="public" type="boolean">
+    Whether tag is public
+  </ResponseField>
+</ResponseField>
+
+## Rejudge Problem
+
+`POST /api/problem/rejudge/`
+
+Rejudges all submissions for a problem. Requires problem admin privileges.
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if rejudge started
+</ResponseField>
+
+## Get Problem Admins
+
+`GET /api/problem/admins/`
+
+Returns all admins for a problem.
+
+<ParamField query="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ResponseField name="admins" type="array">
+  Array of admin objects
+  <ResponseField name="username" type="string">
+    Admin username
+  </ResponseField>
+  <ResponseField name="role" type="string">
+    Admin role
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="group_admins" type="array">
+  Array of group admin objects
+</ResponseField>
+
+## Add Problem Admin
+
+`POST /api/problem/addAdmin/`
+
+Adds an admin to a problem.
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ParamField body="usernameOrEmail" type="string" required>
+  Username or email of user to add
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Delete Problem
+
+`POST /api/problem/delete/`
+
+Deletes a problem. Only allowed if problem has not been used in contests or courses.
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Validators
+
+Supported validator types:
+
+- `literal` - Exact output match
+- `token` - Token-by-token comparison (case-sensitive)
+- `token-caseless` - Token-by-token comparison (case-insensitive)
+- `token-numeric` - Numeric comparison with tolerance
+- `custom` - Custom validator program
+
+## Authentication
+
+All problem management endpoints require authentication:
+
+```bash
+curl -H "Authorization: token YOUR_AUTH_TOKEN" \
+  -X POST \
+  -d '{"title":"My Problem","alias":"my-problem",...}' \
+  https://omegaup.com/api/problem/create/
+```
+
+## Example: Creating a Problem
+
+```bash
+curl -X POST https://omegaup.com/api/problem/create/ \
+  -H "Authorization: token YOUR_TOKEN" \
+  -d '{
+    "title": "Sum of Two Numbers",
+    "alias": "sum-two-numbers",
+    "source": "Original",
+    "visibility": "private",
+    "languages": "c,cpp,java,py",
+    "validator": "token-numeric",
+    "time_limit": 1000,
+    "memory_limit": 32768,
+    "problem_level": "problemLevelBasicIntroductionToProgramming"
+  }'
+```

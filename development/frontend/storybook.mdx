@@ -1,0 +1,614 @@
+---
+title: Storybook Component Documentation
+description: Using Storybook to develop, test, and document Vue components
+---
+
+# Storybook Component Documentation
+
+Storybook is a development tool that provides an interactive environment to build, test, and document UI components in isolation. omegaUp uses Storybook 7.4.6 to showcase and develop Vue components.
+
+## What is Storybook?
+
+Storybook allows developers to:
+- **Develop components in isolation** - Build UI components without running the full application
+- **Visualize different states** - See how components look with different props and data
+- **Test interactions** - Interact with components to test functionality
+- **Document components** - Create living documentation with interactive examples
+- **Improve collaboration** - Share component variations with designers and other developers
+
+By separating component development from the main application logic, Storybook facilitates component reuse, improves team collaboration, and ensures consistency across the UI.
+
+## Running Storybook
+
+To launch Storybook locally:
+
+```bash
+yarn storybook
+```
+
+This command:
+1. Spins up the Storybook dev server
+2. Scans for all `*.stories.ts` files in the component library
+3. Launches a dashboard at `http://localhost:6006`
+4. Provides hot module reloading for rapid development
+
+No Docker setup is required - Storybook runs directly on your local machine.
+
+## Creating Stories
+
+### Story File Structure
+
+Stories are defined in files named `ComponentName.stories.ts` alongside the component:
+
+```
+frontend/www/js/omegaup/components/
+├── ToggleSwitch.vue
+├── ToggleSwitch.stories.ts
+├── CountryFlag.vue
+└── CountryFlag.stories.ts
+```
+
+### Basic Story Template
+
+Here's the structure of a story file:
+
+```typescript
+import { StoryObj, Meta } from '@storybook/vue';
+import ComponentName from './ComponentName.vue';
+
+// Meta configuration
+const meta: Meta<typeof ComponentName> = {
+  component: ComponentName,
+  title: 'Category/ComponentName',
+  argTypes: {
+    // Define controls for interactive props
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+// Story definition
+export const Default: Story = {
+  args: {
+    // Default prop values
+  },
+};
+
+Default.storyName = 'Display Name in Storybook';
+```
+
+### Real Example: ToggleSwitch Component
+
+Location: `frontend/www/js/omegaup/components/ToggleSwitch.stories.ts`
+
+```typescript
+import { StoryObj, Meta } from '@storybook/vue';
+import ToggleSwitch, { ToggleSwitchSize } from './ToggleSwitch.vue';
+
+const meta: Meta<typeof ToggleSwitch> = {
+  component: ToggleSwitch,
+  title: 'Components/ToggleSwitch',
+  argTypes: {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore FIXME: vue-property-decorator is deprecated
+    textDescription: {
+      control: 'text',
+    },
+    checkedValue: {
+      control: 'boolean',
+    },
+    size: {
+      control: 'select',
+      options: ToggleSwitchSize,
+    },
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    textDescription: 'Text for the check',
+    checkedValue: false,
+    size: ToggleSwitchSize.Large,
+  },
+  render: (args, { argTypes }) => ({
+    components: { ToggleSwitch },
+    props: Object.keys(argTypes),
+    template:
+      '<toggle-switch :text-description="$props.textDescription" :checked-value="$props.checkedValue" :size="$props.size" />',
+  }),
+};
+
+Default.storyName = 'ToggleSwitch';
+```
+
+**Key features:**
+- `title`: Organizes stories in the Storybook sidebar ("Components/ToggleSwitch")
+- `argTypes`: Defines interactive controls for props
+- `args`: Default values for the story
+- `render`: Custom template for complex component rendering
+- `storyName`: Display name in the Storybook UI
+
+## Story Configuration
+
+### Meta Object
+
+The `meta` object configures the component and its controls:
+
+```typescript
+const meta: Meta<typeof Badge> = {
+  component: Badge,
+  title: 'Components/Badge', // Sidebar organization
+  argTypes: {
+    badge_alias: {
+      control: 'text',
+      description: 'Unique identifier for the badge',
+    },
+    unlocked: {
+      control: 'boolean',
+      description: 'Whether the badge is unlocked',
+    },
+    size: {
+      control: 'select',
+      options: ['small', 'medium', 'large'],
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        component: 'Badge component displays achievement badges',
+      },
+    },
+  },
+};
+```
+
+### Control Types
+
+Storybook provides various control types for interacting with props:
+
+```typescript
+argTypes: {
+  // Text input
+  name: {
+    control: 'text',
+  },
+  
+  // Number input
+  age: {
+    control: 'number',
+  },
+  
+  // Boolean checkbox
+  isActive: {
+    control: 'boolean',
+  },
+  
+  // Select dropdown
+  size: {
+    control: 'select',
+    options: ['small', 'medium', 'large'],
+  },
+  
+  // Radio buttons
+  theme: {
+    control: 'radio',
+    options: ['light', 'dark'],
+  },
+  
+  // Color picker
+  color: {
+    control: 'color',
+  },
+  
+  // Date picker
+  date: {
+    control: 'date',
+  },
+  
+  // Range slider
+  opacity: {
+    control: { type: 'range', min: 0, max: 1, step: 0.1 },
+  },
+}
+```
+
+## Creating Stories
+
+### Step 1: Create Story File
+
+Inside the component's directory, create a file named `ComponentName.stories.ts`:
+
+```bash
+# Example
+frontend/www/js/omegaup/components/problem/Badge.vue
+frontend/www/js/omegaup/components/problem/Badge.stories.ts
+```
+
+### Step 2: Import Component
+
+```typescript
+import { StoryObj, Meta } from '@storybook/vue';
+import Badge from './Badge.vue';
+```
+
+### Step 3: Define Meta Configuration
+
+```typescript
+const meta: Meta<typeof Badge> = {
+  component: Badge,
+  title: 'Problem/Badge',
+  argTypes: {
+    badge_alias: { control: 'text' },
+    unlocked: { control: 'boolean' },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+```
+
+### Step 4: Create Story Variations
+
+```typescript
+// Default story
+export const Default: Story = {
+  args: {
+    badge_alias: '100solvedProblems',
+    unlocked: true,
+  },
+};
+
+// Locked variation
+export const Locked: Story = {
+  args: {
+    badge_alias: '100solvedProblems',
+    unlocked: false,
+  },
+};
+
+Locked.storyName = 'Locked Badge';
+
+// Different badge
+export const FirstProblem: Story = {
+  args: {
+    badge_alias: 'firstProblemSolved',
+    unlocked: true,
+  },
+};
+
+FirstProblem.storyName = 'First Problem Badge';
+```
+
+### Step 5: View in Storybook
+
+1. Run `yarn storybook`
+2. Navigate to `http://localhost:6006`
+3. Find your component in the sidebar
+4. Interact with the controls to test different states
+
+## Advanced Patterns
+
+### Custom Render Function
+
+For complex component setups, use a custom render function:
+
+```typescript
+export const WithCustomTemplate: Story = {
+  args: {
+    badge_alias: '100solvedProblems',
+    unlocked: true,
+  },
+  render: (args, { argTypes }) => ({
+    components: { Badge },
+    props: Object.keys(argTypes),
+    template: `
+      <div style="padding: 20px; background: #f0f0f0;">
+        <h2>Badge Display</h2>
+        <Badge :badge-alias="$props.badge_alias" :unlocked="$props.unlocked" />
+      </div>
+    `,
+  }),
+};
+```
+
+### Multiple Components
+
+Show multiple components together:
+
+```typescript
+import Username from '../user/Username.vue';
+import Badge from './Badge.vue';
+
+export const UserWithBadge: Story = {
+  render: () => ({
+    components: { Username, Badge },
+    template: `
+      <div>
+        <Username username="johndoe" :linkify="true" />
+        <Badge badge_alias="100solvedProblems" :unlocked="true" />
+      </div>
+    `,
+  }),
+};
+```
+
+### Actions and Events
+
+Capture and display component events:
+
+```typescript
+import { action } from '@storybook/addon-actions';
+
+export const WithActions: Story = {
+  args: {
+    username: 'johndoe',
+  },
+  render: (args) => ({
+    components: { Username },
+    template: `
+      <Username
+        :username="username"
+        @click="handleClick"
+      />
+    `,
+    data() {
+      return { username: args.username };
+    },
+    methods: {
+      handleClick: action('clicked'),
+    },
+  }),
+};
+```
+
+### Decorators
+
+Wrap stories with additional markup or context:
+
+```typescript
+const meta: Meta<typeof Badge> = {
+  component: Badge,
+  decorators: [
+    () => ({
+      template: '<div style="margin: 3em;"><story /></div>',
+    }),
+  ],
+};
+```
+
+## Story Organization
+
+### Naming Convention
+
+Organize stories by feature area:
+
+```typescript
+// General components
+title: 'Components/ToggleSwitch'
+title: 'Components/CountryFlag'
+
+// Feature-specific components
+title: 'Problem/Tags'
+title: 'Problem/Details'
+title: 'User/Profile'
+title: 'Arena/Scoreboard'
+```
+
+### Multiple Stories Per Component
+
+Create multiple stories to showcase different states:
+
+```typescript
+// Default state
+export const Default: Story = { ... };
+
+// Loading state
+export const Loading: Story = { ... };
+
+// Error state
+export const Error: Story = { ... };
+
+// Empty state
+export const Empty: Story = { ... };
+
+// With data
+export const WithData: Story = { ... };
+```
+
+## Documentation in Storybook
+
+### Adding Descriptions
+
+```typescript
+const meta: Meta<typeof Badge> = {
+  component: Badge,
+  parameters: {
+    docs: {
+      description: {
+        component: `
+          The Badge component displays achievement badges.
+          
+          ## Features
+          - Shows locked/unlocked state
+          - Supports multiple badge types
+          - Responsive design
+        `,
+      },
+    },
+  },
+};
+
+// Story-level description
+export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: 'This is the default badge appearance',
+      },
+    },
+  },
+};
+```
+
+### Adding Notes
+
+```typescript
+export const Experimental: Story = {
+  args: { ... },
+  parameters: {
+    notes: 'This is an experimental feature and may change',
+  },
+};
+```
+
+## Best Practices
+
+### 1. One Story File Per Component
+
+Keep stories close to their components:
+
+```
+✅ Good:
+components/
+  ToggleSwitch.vue
+  ToggleSwitch.stories.ts
+
+❌ Bad:
+components/
+  ToggleSwitch.vue
+stories/
+  toggle-switch-stories.ts
+```
+
+### 2. Cover Common Use Cases
+
+Create stories for typical component variations:
+
+```typescript
+export const Default: Story = { ... };
+export const Disabled: Story = { ... };
+export const WithError: Story = { ... };
+export const Loading: Story = { ... };
+```
+
+### 3. Use Meaningful Story Names
+
+```typescript
+// ✅ Good
+Default.storyName = 'Default Toggle';
+Small.storyName = 'Small Size';
+
+// ❌ Bad
+Default.storyName = 'Story1';
+Small.storyName = 'Test';
+```
+
+### 4. Provide Realistic Data
+
+```typescript
+// ✅ Good
+args: {
+  username: 'john_doe',
+  problems_solved: 42,
+  rank: 'expert',
+}
+
+// ❌ Bad
+args: {
+  username: 'test',
+  problems_solved: 1,
+  rank: 'test',
+}
+```
+
+### 5. Test Edge Cases
+
+```typescript
+// Test with empty data
+export const NoProblems: Story = {
+  args: { problems: [] },
+};
+
+// Test with maximum values
+export const ManyProblems: Story = {
+  args: { problems: Array(100).fill({ ... }) },
+};
+
+// Test with long text
+export const LongUsername: Story = {
+  args: { username: 'very_long_username_that_might_cause_issues' },
+};
+```
+
+### 6. Document Complex Props
+
+```typescript
+argTypes: {
+  difficulty: {
+    control: 'select',
+    options: [0, 1, 2, 3, 4],
+    description: 'Problem difficulty level (0=beginner, 4=expert)',
+    table: {
+      type: { summary: 'number' },
+      defaultValue: { summary: 2 },
+    },
+  },
+}
+```
+
+## Troubleshooting
+
+### Story Not Appearing
+
+1. Ensure file is named `*.stories.ts`
+2. Check that the file is in the components directory
+3. Verify the export structure is correct
+4. Restart Storybook
+
+### TypeScript Errors
+
+```typescript
+// If getting type errors with vue-property-decorator
+argTypes: {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore FIXME: vue-property-decorator is deprecated
+  propName: { control: 'text' },
+}
+```
+
+### Component Not Rendering
+
+1. Check component imports are correct
+2. Verify component is properly exported
+3. Ensure all required props are provided in `args`
+4. Check browser console for errors
+
+## Storybook Configuration
+
+Storybook configuration is located in `.storybook/` directory:
+
+- `main.js` - Main configuration
+- `preview.js` - Global decorators and parameters
+
+## Integration with Development
+
+Storybook integrates with the development workflow:
+
+1. **Component Development**: Build and test components in isolation
+2. **Visual Testing**: Review component appearances and interactions
+3. **Documentation**: Generate component documentation automatically
+4. **Design Review**: Share with designers for feedback
+5. **QA Testing**: Test component states without running full app
+
+## Related Documentation
+
+- [Frontend Architecture Overview](/development/frontend/overview)
+- [Vue Component Development](/development/frontend/vue-components)
+- [TypeScript Guidelines](/development/frontend/typescript)
+- [Official Storybook Documentation](https://storybook.js.org/docs/vue/writing-stories/introduction)

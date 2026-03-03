@@ -1,0 +1,75 @@
+---
+title: Response Format
+description: Understanding omegaUp API response format and error handling
+---
+
+All omegaUp API endpoints respond with JSON-formatted data that includes standard fields for status and error handling.
+
+## Standard Response Fields
+
+Every API response includes a `status` field:
+
+| Field   | Type   | Description                                      |
+|---------|--------|--------------------------------------------------|
+| status  | string | Will return `"ok"` if the request was successful |
+| error   | string | Contains error message if the request failed (optional) |
+
+## Success Response
+
+When a request is successful, the response will include `"status": "ok"` along with any endpoint-specific data:
+
+```json
+{
+  "status": "ok",
+  // ... additional response data
+}
+```
+
+## Error Response
+
+When a request fails, the response will include an `error` field with a description of what went wrong:
+
+```json
+{
+  "status": "error",
+  "error": "Error description here"
+}
+```
+
+## Example: Get Server Time
+
+To retrieve the current time from the server, make a `GET` request to:
+
+```
+https://omegaup.com/api/time/get/
+```
+
+This is a public endpoint and does not require authentication. If successful, it will return:
+
+```json
+{
+  "time": 1436577101,
+  "status": "ok"
+}
+```
+
+### Endpoint: `GET time/get/`
+
+#### Description
+
+Returns the current UNIX timestamp according to the server's internal clock. This can be useful for synchronizing a potentially incorrect local clock.
+
+#### Required Permissions
+
+None
+
+#### Request Parameters
+
+None
+
+#### Response Format
+
+| Field   | Type   | Description                                      |
+|---------|--------|--------------------------------------------------|
+| status  | string | Will return `"ok"` if the request was successful |
+| time    | int    | UNIX timestamp representing the server time      |

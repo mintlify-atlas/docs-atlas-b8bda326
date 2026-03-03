@@ -1,0 +1,196 @@
+---
+title: Database Schema and DAO Layer
+description: Overview of omegaUp's database architecture and data access patterns
+---
+
+# Database Schema and DAO Layer
+
+omegaUp uses MySQL 8.0.34 as its primary database, with a well-structured data access layer to maintain separation of concerns.
+
+## Database Architecture
+
+### Technology
+
+- **Database**: MySQL 8.0.34
+- **Access Layer**: PHP-based DAOs (Data Access Objects)
+- **Data Representation**: Value Objects (VOs)
+
+## DAO Layer
+
+The DAO (Data Access Object) layer provides an abstraction between the application logic and the database.
+
+### Location
+
+DAOs are located in `frontend/server/src/DAO/`
+
+### Responsibilities
+
+- **Abstraction**: Hide database implementation details from Controllers
+- **CRUD Operations**: Create, Read, Update, Delete operations for all entities
+- **Query Management**: Encapsulate complex SQL queries
+- **Transaction Handling**: Manage database transactions
+- **Data Mapping**: Convert database rows to Value Objects
+
+### Design Patterns
+
+The DAO layer follows these principles:
+
+1. **Single Responsibility**: Each DAO handles one entity type
+2. **Separation of Concerns**: Business logic stays in Controllers, data access in DAOs
+3. **Type Safety**: Returns strongly-typed Value Objects
+4. **Reusability**: Common queries encapsulated for reuse across Controllers
+
+### Example Usage
+
+When a Controller needs to interact with the database:
+
+```php
+// Controller validates and processes request
+$submission = \OmegaUp\DAO\Submissions::getByGUID($guid);
+
+// DAO returns a Value Object
+// Controller can now use the typed object
+if ($submission->status === 'ready') {
+    // Process submission
+}
+```
+
+## Value Objects (VOs)
+
+Value Objects represent database records as immutable PHP objects.
+
+### Location
+
+Value Objects are typically defined alongside their corresponding DAOs.
+
+### Characteristics
+
+- **Immutable**: Once created, properties should not change
+- **Type-Safe**: Each property has a defined type
+- **Lightweight**: Simple data containers without business logic
+- **Portable**: Can be passed between layers safely
+
+### Benefits
+
+1. **Type Safety**: IDE autocomplete and type checking
+2. **Documentation**: Property types document expected data structure
+3. **Refactoring**: Easy to rename/modify properties across codebase
+4. **Testing**: Easy to mock and test
+
+## Key Database Entities
+
+### Users
+
+- User accounts and authentication credentials
+- User profiles and settings
+- Permissions and roles
+
+### Problems
+
+- Problem statements and metadata
+- Test cases and validators
+- Point values and time limits
+- Source control references
+
+### Contests
+
+- Contest metadata (title, description, dates)
+- Contest rules and policies
+- Penalty calculation settings
+- Participant lists
+
+### Submissions (Runs)
+
+- Submission GUID and timestamp
+- User ID and problem ID
+- Contest ID (if applicable)
+- Programming language
+- Source code reference (filesystem path)
+- Status (waiting, grading, ready)
+- Verdict and score
+- Execution time and memory usage
+- Penalty applied
+
+### Scoreboards
+
+- Cached scoreboard data
+- Rankings and point totals
+- Updated by Broadcaster after each submission
+
+## Database Interactions
+
+### From Frontend/Controllers
+
+1. **Bootstrap**: `frontend/server/bootstrap.php` initializes database connection
+2. **Request Processing**: Controllers receive requests via `ApiCaller::httpEntryPoint()`
+3. **DAO Calls**: Controllers call appropriate DAO methods
+4. **VO Return**: DAOs return Value Objects to Controllers
+5. **Response**: Controllers serialize VOs to JSON for API responses
+
+### From Grader
+
+The Grader directly accesses the database for:
+
+1. **Hydration**: `omegaup.grader.GraderData.hydrateRun` reads submission data
+   - Retrieves submission details by ID
+   - Loads associated problem data
+   - Loads contest information
+   - Loads user information
+
+2. **Updates**: After grading completes
+   - Updates submission status
+   - Stores verdict and score
+   - Records execution metadata
+   - Updates timing information
+
+3. **Scoreboard**: Triggers scoreboard refresh via Frontend API
+
+## Data Flow Example: Submission Creation
+
+1. **Frontend POST**: User submits code via `/api/run/create/`
+2. **Controller Validation**: `RunController::apiCreate` validates request
+3. **DAO Query**: Controller uses DAOs to verify:
+   - Problem exists and belongs to contest
+   - User has permission to submit
+   - Contest is active and within time limits
+4. **VO Creation**: Data is organized into Value Objects
+5. **DAO Insert**: Submission DAO creates new submission record
+6. **Filesystem**: Code saved to filesystem with GUID as filename
+7. **Grader Notification**: HTTP request sent to Grader with submission ID
+8. **Response**: GUID returned to client as JSON
+
+## Data Flow Example: Grading
+
+1. **Grader Read**: Grader queries database for submission by ID
+2. **Hydration**: Related data (problem, contest, user) loaded
+3. **Processing**: Runner executes code, returns results
+4. **Validation**: Grader calculates verdicts and score
+5. **DAO Update**: Grader updates submission record with results
+6. **Scoreboard**: Frontend `/api/scoreboard/refresh` called
+7. **DAO Read**: Scoreboard DAO recalculates rankings
+8. **Cache**: Updated scoreboard cached in database
+9. **Broadcast**: Users notified via WebSockets
+
+## Schema Versioning
+
+Database schema changes are managed through:
+
+- Migration scripts
+- Version control of schema definitions
+- Backward compatibility considerations during deployments
+
+## Performance Considerations
+
+- **Indexing**: Strategic indexes on frequently queried columns
+- **Caching**: Scoreboard and frequently accessed data cached
+- **Connection Pooling**: Efficient database connection management
+- **Query Optimization**: DAOs encapsulate optimized queries
+- **Transactions**: Proper transaction boundaries to maintain consistency
+
+## Best Practices
+
+1. **Always use DAOs**: Never write raw SQL in Controllers
+2. **Return VOs**: DAOs should always return Value Objects, not arrays
+3. **Transaction Safety**: Use transactions for multi-step operations
+4. **Error Handling**: DAOs should throw exceptions for database errors
+5. **Documentation**: Document complex queries and their purpose

@@ -1,0 +1,26 @@
+---
+title: Authentication
+description: How to authenticate with the omegaUp API using auth_token
+---
+
+Some API endpoints are public and require no authentication. However, certain endpoints are protected and require the user to be logged in.
+
+## Login Endpoint
+
+To authenticate, use the `user/login` endpoint. Upon successful login, you will receive an `auth_token`.
+
+## Auth Token Cookie
+
+You must include the `auth_token` in a cookie named `ouat` (omegaUp Auth Token) for all subsequent authenticated requests.
+
+### Cookie Name
+
+```
+ouat
+```
+
+This cookie should contain the authentication token received from the login endpoint.
+
+## Important Session Limitation
+
+**Important:** omegaUp supports only one active session at a time. Logging in programmatically will invalidate your browser session, and vice versa.

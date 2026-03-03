@@ -1,0 +1,56 @@
+---
+title: Scoreboard API
+description: API endpoints for managing contest and assignment scoreboards
+---
+
+## Overview
+
+The Scoreboard API provides functionality to refresh scoreboard caches for contests and course assignments. This endpoint is primarily used by the grader service to update scoreboards after submissions are processed.
+
+## Refresh Scoreboard
+
+Refreshes the scoreboard cache for a contest or course assignment.
+
+**Endpoint:** `POST /api/scoreboard/refresh`
+
+**Authentication:** Special - Requires grader service token
+
+### Authentication
+
+This endpoint is not intended for regular user access. It uses a pre-shared secret token (`OMEGAUP_GRADER_SECRET`) that grants admin-level privileges specifically for this call. Regular user sessions cannot be used since they expire.
+
+### Parameters
+
+<ParamField path="token" type="string" required>
+  Grader service authentication token (OMEGAUP_GRADER_SECRET)
+</ParamField>
+
+<ParamField path="alias" type="string" required>
+  Alias of the contest or assignment
+</ParamField>
+
+<ParamField path="course_alias" type="string">
+  Alias of the course (required if refreshing an assignment scoreboard)
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if the scoreboard cache was successfully refreshed
+</ResponseField>
+
+### Usage
+
+**For Contest Scoreboards:**
+
+Provide the `alias` parameter with the contest alias. The `course_alias` parameter should be null or omitted.
+
+**For Assignment Scoreboards:**
+
+Provide both `course_alias` (the course containing the assignment) and `alias` (the assignment alias).
+
+### Notes
+
+- This endpoint is called automatically by the grader service after processing submissions
+- The scoreboard cache is updated in real-time to reflect the latest results
+- Invalid aliases will result in a "contestNotFound", "courseNotFound", or "assignmentNotFound" exception

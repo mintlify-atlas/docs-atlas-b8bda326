@@ -1,0 +1,91 @@
+---
+title: Contributing to omegaUp
+description: Learn how to contribute to omegaUp, from setting up your development environment to submitting your first pull request
+---
+
+Thank you for your interest in contributing to omegaUp! This guide will help you get started as a contributor and understand the project workflows.
+
+## Before You Start
+
+If you are not confident using Git, we recommend reading an introductory Git tutorial before contributing:
+
+- [GitHub Git Guide](https://docs.github.com/en/get-started/using-git)
+
+### Development Environment Setup
+
+To set up the development environment, run the project locally, and troubleshoot issues, please refer to:
+
+**Development Environment Setup Guide**
+- `frontend/www/docs/Development-Environment-Setup-Process.md`
+
+This guide contains detailed instructions for Docker setup, running tests, authentication, and troubleshooting.
+
+## Issue Assignment Workflow
+
+omegaUp uses an automated issue assignment workflow to keep contributions fair and active.
+
+**Key Rules:**
+- Use `/assign` to self-assign an issue
+- You may have up to **3 active assignments** at a time
+- A Pull Request (**Draft PR is acceptable**) must be opened within **7 days** of assignment
+- Issues without PR activity may be automatically unassigned
+
+<Info>
+For full details about the `/assign` workflow, see the [Issue Assignment Workflow](/development/issue-workflow) page.
+</Info>
+
+## Working on an Issue
+
+<Steps>
+  <Step title="Fork the repository">
+    Visit [https://github.com/omegaup/omegaup](https://github.com/omegaup/omegaup) and fork the repository to your account.
+  </Step>
+  
+  <Step title="Create a new branch">
+    Create a new branch for your changes. Branch naming examples:
+    - `docs/add-contributing-md`
+    - `fix/login-validation`
+    - `feat/problem-editor-ui`
+  </Step>
+  
+  <Step title="Make focused commits">
+    Make focused, incremental commits with clear commit messages.
+  </Step>
+  
+  <Step title="Open a Draft PR if needed">
+    If work is in progress, open a Draft PR to show activity and meet the 7-day requirement.
+  </Step>
+</Steps>
+
+## Commit Message Guidelines
+
+Use clear and descriptive commit messages following conventional commit-style prefixes:
+
+- `docs: add CONTRIBUTING.md`
+- `fix: correct submission validation`
+- `feat: improve problem editor UX`
+
+## Pull Request Process
+
+- Open Pull Requests against the `main` branch
+- Link the related issue in the PR description (e.g. `Fixes #162`)
+- Use Draft PRs for work in progress
+- Ensure CI checks pass before requesting review
+- Keep PRs focused and avoid unrelated refactors
+
+For more information on Pull Requests, see [How to Make a Pull Request](/development/pull-requests).
+
+## Documentation and Translations
+
+- Documentation improvements are welcome
+- Avoid duplicating existing documentation
+- Translation changes should follow existing localization patterns found in `frontend/templates`
+
+## Getting Help
+
+If you need help:
+
+- Ask questions in the issue you're working on at [github.com/omegaup/omegaup/issues](https://github.com/omegaup/omegaup/issues)
+- Open a new issue if clarification is needed
+
+We appreciate your contributions and collaboration!

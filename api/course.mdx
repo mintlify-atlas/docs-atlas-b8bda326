@@ -1,0 +1,315 @@
+---
+title: Course API
+description: Course creation and management endpoints
+---
+
+The Course API allows you to create and manage educational courses with assignments on omegaUp.
+
+## Create Course
+
+`POST /api/course/create/`
+
+Creates a new course. Requires authentication.
+
+<ParamField body="name" type="string" required>
+  Course name
+</ParamField>
+
+<ParamField body="alias" type="string" required>
+  Course alias (used in URLs)
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Course description
+</ParamField>
+
+<ParamField body="start_time" type="timestamp" required>
+  Course start time (UNIX timestamp)
+</ParamField>
+
+<ParamField body="finish_time" type="timestamp" optional>
+  Course end time (UNIX timestamp)
+</ParamField>
+
+<ParamField body="admission_mode" type="enum" required>
+  `public`, `private`, or `registration`
+</ParamField>
+
+<ParamField body="level" type="enum" optional>
+  Course difficulty: `introductory`, `intermediate`, `advanced`
+</ParamField>
+
+<ParamField body="objective" type="string" optional>
+  Learning objectives for the course
+</ParamField>
+
+<ParamField body="school_id" type="integer" optional>
+  Associated school ID
+</ParamField>
+
+<ParamField body="show_scoreboard" type="boolean" optional>
+  Whether to show scoreboard (default: false)
+</ParamField>
+
+<ParamField body="needs_basic_information" type="boolean" optional>
+  Require basic user information (default: false)
+</ParamField>
+
+<ParamField body="requests_user_information" type="enum" optional>
+  User information requirement: `no`, `optional`, `required`
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Clone Course
+
+`POST /api/course/clone/`
+
+Clones an existing course with all its assignments and problems.
+
+<ParamField body="course_alias" type="string" required>
+  Alias of the course to clone
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Name for the new course
+</ParamField>
+
+<ParamField body="alias" type="string" required>
+  Alias for the new course
+</ParamField>
+
+<ParamField body="start_time" type="timestamp" required>
+  Start time for the cloned course
+</ParamField>
+
+<ParamField body="token" type="string" optional>
+  Authorization token for cloning private courses
+</ParamField>
+
+<ResponseField name="alias" type="string">
+  Alias of the newly created course
+</ResponseField>
+
+## Generate Clone Token
+
+`POST /api/course/generateTokenForCloneCourse/`
+
+Generates a token to allow cloning of a private course.
+
+<ParamField body="course_alias" type="string" required>
+  Course alias to generate token for
+</ParamField>
+
+<ResponseField name="token" type="string">
+  Authorization token valid for cloning
+</ResponseField>
+
+## Create Assignment
+
+`POST /api/course/createAssignment/`
+
+Creates a new assignment within a course.
+
+<ParamField body="course_alias" type="string" required>
+  The course alias
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Assignment name
+</ParamField>
+
+<ParamField body="alias" type="string" required>
+  Assignment alias
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Assignment description
+</ParamField>
+
+<ParamField body="assignment_type" type="enum" required>
+  Type of assignment: `homework`, `lesson`, `test`
+</ParamField>
+
+<ParamField body="start_time" type="timestamp" required>
+  Assignment start time
+</ParamField>
+
+<ParamField body="finish_time" type="timestamp" optional>
+  Assignment end time (required unless unlimited_duration)
+</ParamField>
+
+<ParamField body="unlimited_duration" type="boolean" optional>
+  Whether assignment has no deadline
+</ParamField>
+
+<ParamField body="problems" type="string" optional>
+  JSON array of problem objects with alias, points, and commit
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Add Problem to Assignment
+
+`POST /api/course/addProblem/`
+
+Adds a problem to a course assignment.
+
+<ParamField body="course_alias" type="string" required>
+  The course alias
+</ParamField>
+
+<ParamField body="assignment_alias" type="string" required>
+  The assignment alias
+</ParamField>
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias to add
+</ParamField>
+
+<ParamField body="points" type="float" optional>
+  Points for the problem (default: 100)
+</ParamField>
+
+<ParamField body="is_extra_problem" type="boolean" optional>
+  Whether this is an extra/optional problem
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Get Course Details
+
+`GET /api/course/{course_alias}/`
+
+Returns detailed information about a course.
+
+<ParamField path="course_alias" type="string" required>
+  The course alias
+</ParamField>
+
+<ResponseField name="name" type="string">
+  Course name
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Course description
+</ResponseField>
+
+<ResponseField name="alias" type="string">
+  Course alias
+</ResponseField>
+
+<ResponseField name="admission_mode" type="string">
+  Admission mode: `public`, `private`, or `registration`
+</ResponseField>
+
+<ResponseField name="start_time" type="timestamp">
+  Course start time
+</ResponseField>
+
+<ResponseField name="finish_time" type="timestamp" nullable>
+  Course end time
+</ResponseField>
+
+<ResponseField name="assignments" type="array">
+  List of course assignments
+  <ResponseField name="alias" type="string">
+    Assignment alias
+  </ResponseField>
+  <ResponseField name="name" type="string">
+    Assignment name
+  </ResponseField>
+  <ResponseField name="assignment_type" type="string">
+    `homework`, `lesson`, or `test`
+  </ResponseField>
+  <ResponseField name="start_time" type="timestamp">
+    Assignment start time
+  </ResponseField>
+  <ResponseField name="problemCount" type="integer">
+    Number of problems
+  </ResponseField>
+</ResponseField>
+
+## Get Students Progress
+
+`GET /api/course/{course_alias}/students/`
+
+Returns progress information for all students in a course. Requires course admin privileges.
+
+<ParamField path="course_alias" type="string" required>
+  The course alias
+</ParamField>
+
+<ParamField query="page" type="integer" optional>
+  Page number for pagination
+</ParamField>
+
+<ParamField query="length" type="integer" optional>
+  Results per page
+</ParamField>
+
+<ResponseField name="students" type="array">
+  Array of student progress data
+  <ResponseField name="username" type="string">
+    Student username
+  </ResponseField>
+  <ResponseField name="name" type="string" nullable>
+    Student name
+  </ResponseField>
+  <ResponseField name="courseProgress" type="float">
+    Overall course progress (0-100)
+  </ResponseField>
+  <ResponseField name="courseScore" type="float">
+    Overall course score (0-100)
+  </ResponseField>
+</ResponseField>
+
+## List My Courses
+
+`GET /api/course/listMine/`
+
+Returns courses where the authenticated user is an admin or student.
+
+<ResponseField name="admin" type="array">
+  Courses where user is admin
+</ResponseField>
+
+<ResponseField name="student" type="array">
+  Courses where user is enrolled
+</ResponseField>
+
+<ResponseField name="teachingAssistant" type="array">
+  Courses where user is a teaching assistant
+</ResponseField>
+
+## Authentication
+
+All course management endpoints require authentication:
+
+```bash
+curl -H "Authorization: token YOUR_AUTH_TOKEN" \
+  -X POST \
+  -d '{"name":"My Course","alias":"my-course","description":"..."}' \
+  https://omegaup.com/api/course/create/
+```
+
+## Example: Creating a Course
+
+```bash
+curl -X POST https://omegaup.com/api/course/create/ \
+  -H "Authorization: token YOUR_TOKEN" \
+  -d '{
+    "name": "Introduction to Algorithms",
+    "alias": "intro-algorithms",
+    "description": "Learn fundamental algorithms",
+    "start_time": 1640995200,
+    "admission_mode": "public",
+    "level": "introductory"
+  }'
+```

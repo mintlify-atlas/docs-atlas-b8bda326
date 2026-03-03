@@ -1,0 +1,182 @@
+---
+title: Grading System Architecture
+description: In-depth documentation of omegaUp's grading system
+---
+
+# Grading System Architecture
+
+The Grader is responsible for managing the queue of submissions waiting to be judged and orchestrating the evaluation process.
+
+## Overview
+
+The Grader is a Go-based service that:
+
+- Receives submission requests from the Frontend
+- Manages multiple evaluation queues
+- Dispatches submissions to available Runners
+- Collects and validates outputs
+- Calculates final scores
+- Updates the database with results
+- Broadcasts results to users
+
+## Request Handling
+
+### HTTPS Server
+
+The Grader has an embedded HTTPS server that listens for:
+
+- Submission evaluation requests
+- Runner registration/unregistration
+- WebSocket connections for broadcasting
+
+The class `omegaup.grader.Manager` handles request dispatching based on URL.
+
+### Invocation from Frontend
+
+To invoke the Grader from the Frontend, send a JSON payload:
+
+```bash
+curl --url https://localhost:21680/grade/ \
+  -d '{"id": 12345}' \
+  -E frontend/omegaup.pem \
+  --cacert ssl/omegaup-ca.crt \
+  --insecure
+```
+
+The request must be made using certificates (PHP's cURL library in production).
+
+## Submission Processing Flow
+
+### Part 1: Receiving and Queueing
+
+1. **Request Reception**: `omegaup.grader.Manager.grade(req)` is called
+2. **Data Hydration**: 
+   - Looks up submission ID in the database
+   - Rehydrates all necessary data (submission, problem, contest, user)
+   - Uses `omegaup.grader.GraderData.hydrateRun`
+3. **Context Creation**: Creates `omegaup.grader.RunContext` with metadata and tracing information
+4. **Queue Routing**: Submission is sent to queue router via `omegaup.grader.RunnerDispatcher.addRun`
+
+### Queue System
+
+There are eight default queues, processed from left to right:
+
+1. **urgent**: High-priority problems (configured in `omegaup.conf`)
+2. **slow urgent**: Urgent problems that may take >30s to TLE
+3. **contest**: Submissions made during contests
+4. **slow contest**: Contest submissions with long execution time
+5. **normal**: Practice mode submissions
+6. **slow normal**: Practice submissions with long execution time
+7. **rejudge**: Manual rejudges or after test case changes
+8. **slow rejudge**: Rejudges with long execution time
+
+#### Queue Selection Logic
+
+- Urgent queues: Used for special contests (OMI, CONACUP) as configured
+- Contest vs. Normal: Determined by whether submission is in practice mode
+- Slow queues: For problems that could take >30s in worst case
+- Only 50% of Runners can process slow queues simultaneously to prevent monopolization
+
+### Dispatch Process
+
+1. **Waiting**: Submission waits in queue until a Runner becomes available
+2. **Selection**: `omegaup.grader.RunnerDispatcher.dispatchLocked` selects:
+   - Highest-priority submission from all queues
+   - A free Runner (round-robin)
+3. **Logging**: Dispatch time is logged to detect dead Runners
+4. **Execution**: `omegaup.grader.RunnerDispatcher.GradeTask.gradeTask` is called in a thread pool
+5. **Communication**: `omegaup.grader.drivers.OmegaUpDriver.run` communicates with the Runner
+   - 10-minute deadline
+   - If exceeded or exception occurs, Runner is considered dead
+   - Non-critical errors result in re-queueing the submission
+
+## Runner Communication
+
+The Grader communicates with Runners via HTTPS/JSON:
+
+1. **Compilation Request**: 
+   - Sends code and compilation parameters
+   - Runner returns compilation token or error
+
+2. **Execution Request**:
+   - Sends compilation token and SHA-1 hash of input cases
+   - If Runner doesn't have cached inputs, Grader sends the `.zip` file
+   - Runner executes against all test cases
+   - Returns outputs, metadata, and validator results
+
+## Part 2: Validation and Scoring
+
+Once all outputs are collected from the Runner:
+
+1. **Runner Release**: Runner is released back to the pool
+2. **Validation**: `omegaup.grader.Grader` contains logic for all validator types
+
+### Validator Types
+
+All validators tokenize streams using spaces as delimiters:
+
+- **token**: Compares tokens one by one, stops at first difference
+- **token-caseless**: Case-insensitive token comparison
+- **token-numeric**: 
+  - Ignores non-numeric tokens
+  - Interprets numbers as floating-point
+  - Compares with tolerance threshold
+- **custom**: Uses problem-specific validator program
+
+### Verdict Generation
+
+1. **Per-Case Verdicts**: Each test case receives a verdict (AC, PA, WA, TLE, etc.)
+2. **Weight Assignment**:
+   - If problem includes `/testplan` file: parse and normalize weights (sum = 1)
+   - Otherwise: each case weighted equally as 1/total_cases
+3. **Grouping**:
+   - Cases grouped by prefix before first `.` in filename
+   - Example: `group1.1.in`, `group1.2.in` form one group
+   - Group grants points only if all cases have AC or PA verdict
+4. **Final Score**:
+   - Sum of all group scores × problem's point value
+   - In practice mode: always out of 100%
+5. **Database Update**: Final verdict and score stored in database
+6. **Broadcasting**: `RunContext` is enqueued in the Broadcaster
+
+## External Judges
+
+The Grader can communicate with external judges:
+
+- UVa (supports ~10 concurrent slots)
+- PKU, TJU, LiveArchive, SPOJ (1 concurrent slot each)
+
+Process:
+1. Forward submission to appropriate external queue
+2. Change status to "waiting"
+3. Wait for remote server verdict
+4. Update submission record with result
+
+**Note**: External systems were not designed for automated consumers, so slots are limited.
+
+## Broadcaster Integration
+
+After scoring is complete:
+
+1. **Scoreboard Refresh**: Triggers `/api/scoreboard/refresh` in Frontend
+2. **Notifications**: 
+   - All contest participants notified via WebSockets
+   - Submission author receives verdict
+3. **Timing Data**: `RunContext` records:
+   - Time spent in each queue
+   - Runner response time
+   - Additional debugging information
+4. **Cleanup**: `RunContext` is destroyed
+
+## Performance Monitoring
+
+The Grader tracks:
+
+- Queue wait times
+- Dispatch times
+- Compilation times
+- Execution times per test case
+- Validation times
+- End-to-end latency
+
+This data is stored in the `RunContext` for debugging and optimization.

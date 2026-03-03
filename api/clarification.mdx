@@ -1,0 +1,144 @@
+---
+title: Clarification API
+description: API endpoints for managing clarifications in contests and assignments
+---
+
+## Overview
+
+The Clarification API allows users to create, retrieve, and update clarifications for problems within contests or course assignments. Clarifications are created as private by default.
+
+## Create Clarification
+
+Creates a new clarification for a problem in a contest or course assignment.
+
+**Endpoint:** `POST /api/clarification/create`
+
+**Authentication:** Required - User must be logged in
+
+### Parameters
+
+<ParamField path="problem_alias" type="string" required>
+  Alias of the problem
+</ParamField>
+
+<ParamField path="message" type="string" required>
+  Content of the clarification (1-200 characters)
+</ParamField>
+
+<ParamField path="contest_alias" type="string">
+  Alias of the contest (required if not a course assignment)
+</ParamField>
+
+<ParamField path="course_alias" type="string">
+  Alias of the course (required for course assignments)
+</ParamField>
+
+<ParamField path="assignment_alias" type="string">
+  Alias of the assignment (required for course assignments)
+</ParamField>
+
+<ParamField path="username" type="string">
+  Target username for the clarification
+</ParamField>
+
+### Response
+
+<ResponseField name="clarification_id" type="int">
+  ID of the newly created clarification
+</ResponseField>
+
+<ResponseField name="author" type="string">
+  Username of the clarification author
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  The clarification message
+</ResponseField>
+
+<ResponseField name="problem_alias" type="string">
+  Alias of the problem
+</ResponseField>
+
+<ResponseField name="public" type="bool">
+  Whether the clarification is public
+</ResponseField>
+
+<ResponseField name="answer" type="string|null">
+  The answer to the clarification (null if not answered)
+</ResponseField>
+
+<ResponseField name="time" type="timestamp">
+  Creation timestamp
+</ResponseField>
+
+<ResponseField name="receiver" type="string|null">
+  Username of the receiver (null if public)
+</ResponseField>
+
+## Get Clarification Details
+
+Retrieves details of a specific clarification.
+
+**Endpoint:** `GET /api/clarification/details`
+
+**Authentication:** Required - User must have access to the contest/assignment
+
+### Parameters
+
+<ParamField path="clarification_id" type="int" required>
+  ID of the clarification
+</ParamField>
+
+### Response
+
+<ResponseField name="message" type="string">
+  The clarification message
+</ResponseField>
+
+<ResponseField name="answer" type="string|null">
+  The answer to the clarification
+</ResponseField>
+
+<ResponseField name="time" type="timestamp">
+  Last modification time
+</ResponseField>
+
+<ResponseField name="problem_id" type="int">
+  ID of the problem
+</ResponseField>
+
+<ResponseField name="problemset_id" type="int|null">
+  ID of the problemset
+</ResponseField>
+
+## Update Clarification
+
+Updates the contents of a clarification.
+
+**Endpoint:** `POST /api/clarification/update`
+
+**Authentication:** Required - Contest/assignment admin or higher
+
+### Parameters
+
+<ParamField path="clarification_id" type="int" required>
+  ID of the clarification to update
+</ParamField>
+
+<ParamField path="answer" type="string">
+  Answer to the clarification
+</ParamField>
+
+<ParamField path="message" type="string">
+  Updated clarification message
+</ParamField>
+
+<ParamField path="public" type="bool">
+  Whether to make the clarification public
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if successful
+</ResponseField>

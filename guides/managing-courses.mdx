@@ -1,0 +1,497 @@
+---
+title: Managing Courses on omegaUp
+description: Create and manage educational programming courses on the omegaUp platform
+---
+
+## Overview
+
+omegaUp courses provide a structured way to teach programming skills over time. Unlike contests which are time-limited events, courses allow students to progress at their own pace through assignments and learning materials.
+
+## Courses vs Contests
+
+<CardGroup cols={2}>
+  <Card title="Contests" icon="trophy">
+    **Best for:**
+    - Time-limited competitions
+    - Ranking participants
+    - Single events
+    - High-pressure evaluation
+    
+    **Features:**
+    - Fixed start/end times
+    - Real-time scoreboards
+    - Lockdown mode available
+  </Card>
+  
+  <Card title="Courses" icon="graduation-cap">
+    **Best for:**
+    - Semester-long classes
+    - Self-paced learning
+    - Progressive skill building
+    - Educational environments
+    
+    **Features:**
+    - Multiple assignments
+    - Student progress tracking
+    - Flexible deadlines
+    - Course materials
+  </Card>
+</CardGroup>
+
+## Creating a Course
+
+<Steps>
+  <Step title="Access course creation">
+    Navigate to the course creation page on omegaUp (requires teacher/admin permissions).
+  </Step>
+
+  <Step title="Set basic information">
+    **Required fields:**
+    - **Course name:** Clear, descriptive title
+    - **Alias:** URL-friendly identifier (e.g., `intro-programming-2026`)
+    - **Description:** Brief overview of course content and goals
+    
+    **Optional fields:**
+    - **Start/End dates:** Course availability window
+    - **School/Institution:** Your organization
+  </Step>
+
+  <Step title="Configure course settings">
+    Choose your course type:
+    
+    <Tabs>
+      <Tab title="Public Course">
+        **Visibility:** Anyone can discover and enroll
+        
+        **Best for:**
+        - Open educational resources
+        - Community learning
+        - Public skill-building
+        
+        <Note>
+          Public courses appear in omegaUp's course catalog.
+        </Note>
+      </Tab>
+      
+      <Tab title="Private Course">
+        **Visibility:** Only invited students can access
+        
+        **Best for:**
+        - School classes
+        - Institutional programs
+        - Controlled enrollment
+        
+        <Info>
+          You'll need to manually add or invite students.
+        </Info>
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Save and configure">
+    After creating the course, you can add:
+    - Assignments
+    - Students
+    - Teaching assistants
+    - Course materials
+  </Step>
+</Steps>
+
+## Course Structure
+
+### Assignments
+
+Assignments are the building blocks of your course. Each assignment contains:
+
+<AccordionGroup>
+  <Accordion title="Assignment Properties" icon="clipboard-list">
+    **Basic settings:**
+    - **Name:** Assignment title
+    - **Description:** Instructions and learning objectives
+    - **Start/End dates:** When students can work on it
+    
+    **Content:**
+    - **Problems:** One or more programming problems
+    - **Order:** Sequence in the course
+    - **Assignment type:** Practice, Homework, Test
+  </Accordion>
+
+  <Accordion title="Assignment Types" icon="list">
+    <Tabs>
+      <Tab title="Practice">
+        - No strict deadline pressure
+        - Focus on learning
+        - Students can retry unlimited times
+        - Solutions may be visible
+      </Tab>
+      
+      <Tab title="Homework">
+        - Soft deadlines
+        - Graded assignments
+        - Limited retries (configurable)
+        - Partial credit available
+      </Tab>
+      
+      <Tab title="Test">
+        - Strict time limits
+        - Limited attempts
+        - Higher stakes
+        - May hide test cases
+      </Tab>
+    </Tabs>
+  </Accordion>
+
+  <Accordion title="Problem Configuration" icon="code">
+    For each problem in an assignment:
+    
+    **Settings:**
+    - **Points:** Weight in assignment grade
+    - **Visibility:** Show/hide expected outputs
+    - **Attempts:** Limit submission count (optional)
+    
+    **Content types:**
+    - Standard programming problems
+    - Karel problems
+    - Display-only content (no submissions)
+  </Accordion>
+</AccordionGroup>
+
+## Adding Problems to Assignments
+
+<Steps>
+  <Step title="Create or select problems">
+    Problems must exist in omegaUp before adding to assignments.
+    
+    <CardGroup cols={2}>
+      <Card title="Create New" icon="plus" href="/guides/creating-problems">
+        Learn how to create problems
+      </Card>
+      <Card title="Use Existing" icon="search">
+        Search omegaUp's problem database
+      </Card>
+    </CardGroup>
+  </Step>
+
+  <Step title="Add to assignment">
+    1. Open your course's assignment
+    2. Click **Add Problem**
+    3. Search by problem alias or title
+    4. Configure points and settings
+    5. Save the assignment
+  </Step>
+
+  <Step title="Order problems">
+    Arrange problems by:
+    - Difficulty (easy to hard)
+    - Topic (group related concepts)
+    - Learning progression
+    
+    <Tip>
+      Students typically work through problems in order, so structure thoughtfully.
+    </Tip>
+  </Step>
+</Steps>
+
+## Student Management
+
+### Adding Students
+
+<Tabs>
+  <Tab title="Individual Invitation">
+    **For small classes:**
+    
+    <Steps>
+      <Step title="Get student usernames">
+        Students must have omegaUp accounts first.
+      </Step>
+      
+      <Step title="Invite to course">
+        1. Go to course management
+        2. Click **Students** tab
+        3. Enter username or email
+        4. Send invitation
+      </Step>
+      
+      <Step title="Students accept">
+        Students receive notification and must accept the invitation.
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Bulk Upload">
+    **For large classes:**
+    
+    <Steps>
+      <Step title="Prepare CSV file">
+        Create a file with student information:
+        ```csv
+        username,email,name
+        student1,student1@school.edu,John Doe
+        student2,student2@school.edu,Jane Smith
+        ```
+      </Step>
+      
+      <Step title="Upload to course">
+        Use the bulk upload feature in course management.
+      </Step>
+      
+      <Step title="Send invitations">
+        All students receive automatic invitations.
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Registration Code">
+    **For open enrollment:**
+    
+    <Steps>
+      <Step title="Generate code">
+        Create a unique registration code for your course.
+      </Step>
+      
+      <Step title="Share with students">
+        Distribute the code via email, LMS, or in class.
+      </Step>
+      
+      <Step title="Students self-enroll">
+        Students enter the code to join the course automatically.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+### Managing Teaching Assistants
+
+<Info>
+  Teaching assistants can help grade, answer questions, and manage course content.
+</Info>
+
+**To add a TA:**
+
+1. Navigate to course **Admins** section
+2. Choose **Add Teaching Assistant**
+3. Enter TA's omegaUp username
+4. Set permissions (grading, content editing, etc.)
+
+**TA permissions:**
+- View all student submissions
+- Provide feedback
+- Answer clarifications
+- Grade assignments (if enabled)
+- Generate reports
+
+## Tracking Student Progress
+
+### Progress Dashboard
+
+The course dashboard provides:
+
+<CardGroup cols={2}>
+  <Card title="Individual Progress" icon="user">
+    **Per student view:**
+    - Assignments completed
+    - Current scores
+    - Submission history
+    - Time spent
+  </Card>
+  
+  <Card title="Class Overview" icon="users">
+    **Aggregate data:**
+    - Assignment completion rates
+    - Average scores
+    - Problem difficulty analysis
+    - Engagement metrics
+  </Card>
+</CardGroup>
+
+### Activity Reports
+
+Generate reports showing:
+- Student login activity
+- Submission frequency
+- Problem attempt patterns
+- Time distribution
+
+<Tip>
+  Use activity reports to identify students who may need additional support.
+</Tip>
+
+## Grading and Feedback
+
+### Automatic Grading
+
+<Check>
+  Most problems are graded automatically:
+  - Submissions run against test cases
+  - Scores calculated based on correctness
+  - Immediate feedback to students
+</Check>
+
+### Manual Review
+
+For assignments requiring human evaluation:
+
+<Steps>
+  <Step title="Access submissions">
+    Navigate to assignment → View submissions
+  </Step>
+  
+  <Step title="Review code">
+    - Read student solutions
+    - Check for plagiarism
+    - Evaluate code quality
+  </Step>
+  
+  <Step title="Provide feedback">
+    - Add comments
+    - Adjust scores if needed
+    - Suggest improvements
+  </Step>
+</Steps>
+
+## Course Materials
+
+### Content-Only Assignments
+
+Create assignments without programming problems:
+
+**Use cases:**
+- Course announcements
+- Reading materials
+- Video lectures
+- Reference documentation
+
+**Configuration:**
+- Set problem language to **"No submissions"**
+- Add instructional content in problem statement
+- Students can view but not submit code
+
+<Info>
+  This is useful for providing context before programming assignments.
+</Info>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Course Structure" icon="sitemap">
+    **Organize logically:**
+    - Start with easier problems
+    - Group by topic or concept
+    - Build on previous knowledge
+    - Include review assignments
+    
+    **Typical structure:**
+    1. Introduction and setup
+    2. Basic concepts (variables, loops, conditionals)
+    3. Intermediate topics (arrays, functions)
+    4. Advanced concepts (algorithms, data structures)
+    5. Final project or assessment
+  </Accordion>
+
+  <Accordion title="Assignment Timing" icon="clock">
+    **Set realistic deadlines:**
+    - 3-7 days for homework
+    - 1-2 weeks for larger assignments
+    - Account for difficulty and workload
+    
+    **Avoid:**
+    - Too many simultaneous deadlines
+    - Assignments due during exams
+    - Unrealistic time constraints
+  </Accordion>
+
+  <Accordion title="Student Communication" icon="comments">
+    **Stay engaged:**
+    - Respond to clarifications promptly
+    - Announce important updates
+    - Provide regular feedback
+    - Be available for questions
+    
+    **Use clarifications for:**
+    - Problem clarifications
+    - Technical issues
+    - Deadline extensions
+    - General announcements
+  </Accordion>
+
+  <Accordion title="Problem Selection" icon="filter">
+    **Choose appropriate problems:**
+    - Match difficulty to skill level
+    - Align with learning objectives
+    - Provide variety
+    - Include real-world applications
+    
+    **Mix problem types:**
+    - Conceptual understanding
+    - Implementation practice
+    - Algorithm design
+    - Debugging exercises
+  </Accordion>
+</AccordionGroup>
+
+## Managing Public Courses
+
+For courses in omegaUp's public catalog:
+
+<Steps>
+  <Step title="Content via GitHub (Advanced)">
+    Some public courses are managed through GitHub repositories, allowing:
+    - Version control for course content
+    - Community contributions via pull requests
+    - Automated updates to omegaUp
+    
+    <Info>
+      This feature is used by organizations like the Mexican Olympiad in Informatics. Contact omegaUp for setup assistance.
+    </Info>
+  </Step>
+  
+  <Step title="Quality standards">
+    Public courses should:
+    - Have clear learning objectives
+    - Include well-tested problems
+    - Provide comprehensive instructions
+    - Be maintained and updated regularly
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Students Can't Access Course
+
+**Check:**
+- Course is published (not draft)
+- Student accepted invitation
+- Course dates are valid
+- Student account is active
+
+### Problems Not Appearing
+
+**Verify:**
+- Problem is published
+- Problem added to assignment
+- Assignment is visible to students
+- Assignment dates are active
+
+### Grading Issues
+
+**Review:**
+- Test cases are correct
+- Time/memory limits are reasonable
+- Validator is working properly
+- No server-side errors
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Create Problems" icon="code" href="/guides/creating-problems">
+    Build problems for your course
+  </Card>
+  
+  <Card title="Run Contests" icon="trophy" href="/guides/running-contests">
+    Host competitive programming events
+  </Card>
+  
+  <Card title="Badges & Certificates" icon="award" href="/guides/badges-certificates">
+    Recognize student achievements
+  </Card>
+</CardGroup>

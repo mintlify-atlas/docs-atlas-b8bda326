@@ -1,0 +1,396 @@
+---
+title: Coding arena
+description: Interactive environment for solving problems with multi-language support and real-time feedback
+---
+
+## Overview
+
+The omegaUp arena is an integrated development environment (IDE) where users solve programming problems, submit solutions, and receive instant feedback. It supports multiple programming languages, provides code editing tools, and displays real-time submission results.
+
+## Interface components
+
+The arena interface consists of several key components:
+
+<CardGroup cols={2}>
+  <Card title="Problem viewer" icon="book-open">
+    Displays problem statements, examples, constraints, and test cases
+  </Card>
+  <Card title="Code editor" icon="code">
+    Monaco editor with syntax highlighting and autocomplete for multiple languages
+  </Card>
+  <Card title="Submission panel" icon="paper-plane">
+    Submit solutions and view submission history
+  </Card>
+  <Card title="Results viewer" icon="chart-bar">
+    See verdict, test case results, and performance metrics
+  </Card>
+</CardGroup>
+
+## Supported languages
+
+omegaUp supports multiple programming languages with different time and memory limits:
+
+### Compiled languages
+
+<Tabs>
+  <Tab title="C++">
+    **Compiler**: g++ (C++17)
+    
+    ```cpp
+    #include <iostream>
+    using namespace std;
+    
+    int main() {
+        int a, b;
+        cin >> a >> b;
+        cout << a + b << endl;
+        return 0;
+    }
+    ```
+    
+    - Time limit: 1x
+    - Memory limit: 256 MB default
+    - Best for: Performance-critical problems
+  </Tab>
+
+  <Tab title="C">
+    **Compiler**: gcc (C11)
+    
+    ```c
+    #include <stdio.h>
+    
+    int main() {
+        int a, b;
+        scanf("%d %d", &a, &b);
+        printf("%d\n", a + b);
+        return 0;
+    }
+    ```
+    
+    - Time limit: 1x
+    - Memory limit: 256 MB default
+    - Best for: Low-level programming
+  </Tab>
+
+  <Tab title="Java">
+    **Compiler**: OpenJDK 11
+    
+    ```java
+    import java.util.Scanner;
+    
+    public class Main {
+        public static void main(String[] args) {
+            Scanner sc = new Scanner(System.in);
+            int a = sc.nextInt();
+            int b = sc.nextInt();
+            System.out.println(a + b);
+        }
+    }
+    ```
+    
+    - Time limit: 2x (doubled)
+    - Memory limit: 512 MB
+    - Best for: Object-oriented solutions
+  </Tab>
+</Tabs>
+
+### Interpreted languages
+
+<Tabs>
+  <Tab title="Python 3">
+    **Interpreter**: Python 3.10
+    
+    ```python
+    a, b = map(int, input().split())
+    print(a + b)
+    ```
+    
+    - Time limit: 3x (tripled)
+    - Memory limit: 384 MB
+    - Best for: Quick prototyping, algorithms
+  </Tab>
+
+  <Tab title="Python 2">
+    **Interpreter**: Python 2.7 (legacy)
+    
+    ```python
+    a, b = map(int, raw_input().split())
+    print a + b
+    ```
+    
+    - Time limit: 3x (tripled)
+    - Memory limit: 384 MB
+    - **Note**: Deprecated, use Python 3
+  </Tab>
+
+  <Tab title="Ruby">
+    **Interpreter**: Ruby 2.7
+    
+    ```ruby
+    a, b = gets.split.map(&:to_i)
+    puts a + b
+    ```
+    
+    - Time limit: 3x (tripled)
+    - Memory limit: 384 MB
+    - Best for: Text processing
+  </Tab>
+</Tabs>
+
+### Additional languages
+
+- **Pascal**: Free Pascal Compiler
+- **JavaScript**: Node.js
+- **Kotlin**: JetBrains Kotlin compiler
+
+<Info>
+  Time limits are automatically adjusted based on the language. Interpreted languages typically get 2-3x more time than compiled languages.
+</Info>
+
+## Code editor features
+
+The arena uses the Monaco editor (same as Visual Studio Code) with rich features:
+
+### Editor capabilities
+
+<AccordionGroup>
+  <Accordion title="Syntax highlighting">
+    Full syntax highlighting for all supported languages with proper tokenization and color coding.
+  </Accordion>
+
+  <Accordion title="Autocomplete">
+    IntelliSense-powered autocomplete for standard library functions and user-defined variables.
+  </Accordion>
+
+  <Accordion title="Error detection">
+    Real-time syntax error detection with inline error messages (linting).
+  </Accordion>
+
+  <Accordion title="Code formatting">
+    Auto-indentation and code formatting shortcuts for cleaner code.
+  </Accordion>
+
+  <Accordion title="Multiple themes">
+    Light and dark editor themes to match your preference.
+  </Accordion>
+
+  <Accordion title="Keyboard shortcuts">
+    VS Code-compatible shortcuts: Ctrl+S to submit, Ctrl+/ for comments, etc.
+  </Accordion>
+</AccordionGroup>
+
+### Editor configuration
+
+Users can customize:
+
+- **Font size**: Adjust for readability
+- **Theme**: Light, dark, or high contrast
+- **Tab size**: Spaces or tabs, 2 or 4 spaces
+- **Auto-close**: Automatically close brackets and quotes
+- **Minimap**: Show/hide code minimap
+
+## Submission workflow
+
+<Steps>
+  <Step title="Write solution">
+    Develop your solution in the code editor using your preferred language
+  </Step>
+  
+  <Step title="Select language">
+    Choose the programming language from the dropdown menu
+  </Step>
+  
+  <Step title="Submit code">
+    Click "Submit" or press Ctrl+S to send your solution for grading
+  </Step>
+  
+  <Step title="View results">
+    Watch real-time grading progress and see test case results
+  </Step>
+  
+  <Step title="Debug if needed">
+    If the verdict is not Accepted, review failed test cases and revise your solution
+  </Step>
+</Steps>
+
+## Submission verdicts
+
+After submitting, you'll receive one of these verdicts:
+
+### Success verdicts
+
+<Check>**Accepted (AC)**: Your solution passed all test cases! ✓</Check>
+
+### Error verdicts
+
+<Warning>
+**Common error verdicts:**
+
+- **Wrong Answer (WA)**: Output doesn't match expected results
+- **Time Limit Exceeded (TLE)**: Solution took too long to execute
+- **Memory Limit Exceeded (MLE)**: Solution used too much memory
+- **Runtime Error (RTE)**: Program crashed during execution
+- **Compilation Error (CE)**: Code failed to compile
+- **Output Limit Exceeded (OLE)**: Produced too much output
+- **Restricted Function**: Used a forbidden system call or library
+</Warning>
+
+### Special verdicts
+
+- **Judging**: Still being evaluated
+- **In Queue**: Waiting for a runner to pick it up
+- **Pending**: Queued for grading
+
+## Test case results
+
+For each test case, you'll see:
+
+```json
+{
+  "verdict": "AC",
+  "score": 1.0,
+  "runtime": 0.012,
+  "memory": 1234567,
+  "meta": {
+    "verdict": "OK",
+    "time": 12.3,
+    "mem": 1.23
+  }
+}
+```
+
+<ResponseField name="verdict" type="string">
+  Test case verdict (AC, WA, TLE, etc.)
+</ResponseField>
+
+<ResponseField name="score" type="number">
+  Points earned (0.0 to 1.0 for this test case)
+</ResponseField>
+
+<ResponseField name="runtime" type="number">
+  Execution time in seconds
+</ResponseField>
+
+<ResponseField name="memory" type="number">
+  Memory used in bytes
+</ResponseField>
+
+## Performance metrics
+
+Track your solution's efficiency:
+
+<CardGroup cols={3}>
+  <Card title="Execution time" icon="clock">
+    How long your solution took to run
+  </Card>
+  <Card title="Memory usage" icon="memory">
+    Peak memory consumption during execution
+  </Card>
+  <Card title="Score breakdown" icon="chart-pie">
+    Points earned per test case group
+  </Card>
+</CardGroup>
+
+### Optimization tips
+
+<Tip>
+  **Time Limit Exceeded?**
+  - Review your algorithm's complexity (O(n²) might be too slow)
+  - Use faster input/output methods (scanf/printf in C++ instead of cin/cout)
+  - Avoid unnecessary computations in loops
+</Tip>
+
+<Tip>
+  **Memory Limit Exceeded?**
+  - Reduce array sizes or use dynamic allocation
+  - Release memory when no longer needed
+  - Use more memory-efficient data structures
+</Tip>
+
+## Clarifications
+
+During contests, you can request clarifications:
+
+<Steps>
+  <Step title="Click clarifications tab">
+    Navigate to the clarifications section in the arena
+  </Step>
+  
+  <Step title="Submit question">
+    Ask about problem statement ambiguities or contest rules
+  </Step>
+  
+  <Step title="Receive response">
+    Contest admins will answer publicly or privately
+  </Step>
+</Steps>
+
+<Warning>
+  Don't ask for solution hints in clarifications. Questions should only clarify problem statements or technical issues.
+</Warning>
+
+## Contest features
+
+In contest mode, the arena includes additional features:
+
+- **Countdown timer**: Shows remaining contest time
+- **Scoreboard**: View current standings
+- **Problem status**: See which problems you've solved
+- **Penalty tracking**: Monitor time penalties for wrong submissions
+- **Clarifications feed**: Real-time clarification notifications
+
+## Practice mode
+
+When solving problems outside contests:
+
+<CardGroup cols={2}>
+  <Card title="Unlimited attempts" icon="infinity">
+    Submit as many times as you need without penalties
+  </Card>
+  <Card title="View test cases" icon="eye">
+    See some (or all) test cases depending on problem settings
+  </Card>
+  <Card title="Editorial access" icon="book">
+    Read problem editorials and solutions after solving
+  </Card>
+  <Card title="Statistics" icon="chart-line">
+    Track your solving streak and problem count
+  </Card>
+</CardGroup>
+
+## Mobile support
+
+The arena is responsive and works on mobile devices:
+
+- Touch-optimized code editor
+- Simplified interface for small screens
+- Support for external keyboards
+- Landscape mode recommended for coding
+
+<Info>
+  For the best coding experience, we recommend using a desktop or laptop with a physical keyboard.
+</Info>
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+S` | Submit solution |
+| `Ctrl+/` | Toggle comment |
+| `Ctrl+F` | Find in code |
+| `Ctrl+H` | Find and replace |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Y` | Redo |
+| `Ctrl+]` | Indent line |
+| `Ctrl+[` | Outdent line |
+
+## Additional resources
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="code" href="/api/run">
+    Submit runs programmatically using the API
+  </Card>
+  <Card title="Problem library" icon="book" href="/features/problems">
+    Explore thousands of problems to solve
+  </Card>
+</CardGroup>

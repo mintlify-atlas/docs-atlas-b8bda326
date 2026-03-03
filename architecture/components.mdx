@@ -1,0 +1,149 @@
+---
+title: System Components
+description: Detailed overview of omegaUp's main system components
+---
+
+# System Components
+
+omegaUp is composed of several interconnected components that work together to provide a complete online judge platform.
+
+## Frontend
+
+The Frontend handles all user interactions and API requests.
+
+### Request Processing
+
+When a user makes a submission, the request follows this flow:
+
+1. Code is sent via HTTP POST to `/api/run/create/`
+2. nginx forwards the request to HHVM
+3. `ApiCaller::httpEntryPoint()` is invoked
+4. `frontend/server/bootstrap.php` loads configuration and initializes database connections
+5. A `Request` object is created with all request parameters
+6. The URL path is tokenized and routed to the appropriate Controller method
+
+### Controllers
+
+Controllers are located in `frontend/server/src/Controllers/` and handle API endpoints. For example:
+
+- **RunController::apiCreate**: Handles submission creation
+  - Validates authentication token
+  - Verifies user permissions
+  - Checks contest time limits and submission rate limits
+  - Calculates penalties according to contest policy
+  - Generates a GUID for the submission
+  - Stores code in the filesystem
+  - Notifies the Grader to process the submission
+  - Returns GUID as JSON response
+
+Each controller method:
+- Validates request parameters
+- Authenticates the user (via cookie or POST parameter)
+- Performs authorization checks
+- Interacts with DAOs to read/write data
+- Returns JSON responses
+
+### DAOs (Data Access Objects)
+
+DAOs are located in `frontend/server/src/DAO/` and provide the data access layer:
+
+- Abstract database operations
+- Manage CRUD operations for all entities
+- Return Value Objects (VOs) representing database records
+- Maintain database schema abstraction
+
+### VOs (Value Objects)
+
+Value Objects represent database records as PHP objects:
+
+- Immutable data structures
+- Type-safe representation of database rows
+- Used throughout the application to pass data between layers
+
+## Backend (Controllers + DAOs)
+
+The backend is responsible for:
+
+- **API Management**: Exposing RESTful endpoints
+- **Authentication & Authorization**: Managing user sessions and permissions
+- **Business Logic**: Implementing contest rules, scoring policies, and validation
+- **Data Persistence**: Storing and retrieving data via DAOs
+- **Integration**: Coordinating between Frontend, Grader, and GitServer
+
+## GitServer
+
+Manages problem repositories:
+
+- Stores problem test cases and validators
+- Handles problem versioning
+- Integrates with Controllers for problem management
+
+## Grader
+
+The Grader is a Go-based service responsible for managing submission evaluation. See the [Grading System Architecture](/architecture/grader) for detailed information.
+
+Key responsibilities:
+- Receiving submission requests from Controllers
+- Managing evaluation queues
+- Dispatching submissions to Runners
+- Validating outputs and calculating scores
+- Updating submission results in the database
+- Broadcasting results to users
+
+## Runners
+
+Runners are isolated execution environments deployed on virtual machines in the cloud.
+
+### Registration
+
+- Each Runner sends a registration request to the Grader on startup
+- Runners are added to the pool of available executors
+- Dispatched in round-robin fashion
+- Re-register every minute to signal they're alive
+
+### Execution Process
+
+1. **Compilation** (`omegaup.runner.Runner.compile`):
+   - Uses `omegaup.runner.Minijail` for sandboxing
+   - Compiles user code (main class named `Main`)
+   - Compiles validator if problem defines one
+   - Returns compilation token or error
+
+2. **Running** (`omegaup.runner.Service`):
+   - Receives compilation token and input cases
+   - Caches input `.zip` files locally
+   - Executes compiled program against each `.in` file
+   - Runs validator if defined
+   - Compresses outputs with bzip2
+   - Returns results and metadata to Grader
+   - Cleans up temporary files
+
+### Security
+
+- Each Runner has an embedded HTTPS server
+- Communication with Grader uses JSON over HTTPS
+- Mutex ensures single execution per Runner
+- `minijail` provides process isolation and sandboxing
+
+## Broadcaster
+
+The Broadcaster maintains real-time communication:
+
+- Maintains contest scoreboards
+- Notifies contestants via WebSockets
+- Triggers `/api/scoreboard/refresh` when submissions complete
+- Caches scoreboards on the server
+- Notifies all contest participants and submission authors
+- Records timing data for performance monitoring
+
+## Database (MySQL)
+
+Central data store for:
+
+- User accounts and authentication
+- Problems and contests
+- Submissions and results
+- Scoreboards and rankings
+- System configuration
+
+See [Database Schema](/architecture/database) for detailed information.

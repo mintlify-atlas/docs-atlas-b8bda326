@@ -1,0 +1,365 @@
+---
+title: User API
+description: User authentication and profile management endpoints
+---
+
+The User API provides endpoints for user authentication, registration, and profile management.
+
+## Login
+
+`POST /api/user/login/`
+
+Authenticates a user and returns an authentication token.
+
+<ParamField body="usernameOrEmail" type="string" required>
+  Username or email address
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User password
+</ParamField>
+
+<ResponseField name="auth_token" type="string">
+  Authentication token for API requests
+</ResponseField>
+
+## Create User
+
+`POST /api/user/create/`
+
+Registers a new user account.
+
+<ParamField body="username" type="string" required>
+  Desired username (3-20 characters, alphanumeric)
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Strong password (minimum 8 characters)
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Valid email address
+</ParamField>
+
+<ParamField body="name" type="string" optional>
+  Full name
+</ParamField>
+
+<ParamField body="birth_date" type="timestamp" optional>
+  Birth date (UNIX timestamp)
+</ParamField>
+
+<ParamField body="gender" type="enum" optional>
+  Gender: `female`, `male`, `other`, `decline`
+</ParamField>
+
+<ParamField body="recaptcha" type="string" optional>
+  reCAPTCHA response token (required if CAPTCHA validation enabled)
+</ParamField>
+
+<ParamField body="is_private" type="boolean" optional>
+  Whether profile is private (default: false)
+</ParamField>
+
+<ParamField body="parent_email" type="string" optional>
+  Parent email (required for users under 13)
+</ParamField>
+
+<ResponseField name="username" type="string">
+  Created username
+</ResponseField>
+
+## Verify Email
+
+`GET /api/user/verifyEmail/`
+
+Verifies a user's email address using verification ID.
+
+<ParamField query="id" type="string" required>
+  Email verification ID (sent via email)
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if verification successful
+</ResponseField>
+
+## Change Password
+
+`POST /api/user/changePassword/`
+
+Changes the user's password. Requires authentication.
+
+<ParamField body="old_password" type="string" required>
+  Current password
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  New password
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if password changed successfully
+</ResponseField>
+
+## Get User Profile
+
+`GET /api/user/profile/`
+
+Returns profile information for a user.
+
+<ParamField query="username" type="string" optional>
+  Username to look up (defaults to authenticated user)
+</ParamField>
+
+<ResponseField name="username" type="string">
+  Username
+</ResponseField>
+
+<ResponseField name="name" type="string" nullable>
+  Full name
+</ResponseField>
+
+<ResponseField name="country" type="string" nullable>
+  Country name
+</ResponseField>
+
+<ResponseField name="country_id" type="string" nullable>
+  ISO country code
+</ResponseField>
+
+<ResponseField name="state" type="string" nullable>
+  State/province
+</ResponseField>
+
+<ResponseField name="school" type="string" nullable>
+  School name
+</ResponseField>
+
+<ResponseField name="gravatar_92" type="string">
+  Gravatar URL (92x92)
+</ResponseField>
+
+<ResponseField name="verified" type="boolean">
+  Whether email is verified
+</ResponseField>
+
+<ResponseField name="classname" type="string">
+  CSS class for rank badge
+</ResponseField>
+
+<ResponseField name="rankinfo" type="object">
+  Ranking information
+  <ResponseField name="rank" type="integer" nullable>
+    Global rank
+  </ResponseField>
+  <ResponseField name="problems_solved" type="integer" nullable>
+    Number of problems solved
+  </ResponseField>
+  <ResponseField name="author_ranking" type="integer" nullable>
+    Author ranking
+  </ResponseField>
+</ResponseField>
+
+## Update User Profile
+
+`POST /api/user/update/`
+
+Updates user profile information. Requires authentication.
+
+<ParamField body="name" type="string" optional>
+  Full name
+</ParamField>
+
+<ParamField body="country_id" type="string" optional>
+  ISO country code
+</ParamField>
+
+<ParamField body="state_id" type="string" optional>
+  State/province code
+</ParamField>
+
+<ParamField body="school_id" type="integer" optional>
+  School ID
+</ParamField>
+
+<ParamField body="scholar_degree" type="enum" optional>
+  Education level: `none`, `primary`, `secondary`, `tertiary`, `bachelors`, `master`, `doctorate`
+</ParamField>
+
+<ParamField body="birth_date" type="timestamp" optional>
+  Birth date
+</ParamField>
+
+<ParamField body="graduation_date" type="timestamp" optional>
+  Graduation date
+</ParamField>
+
+<ParamField body="locale" type="string" optional>
+  Preferred language: `en`, `es`, `pt`
+</ParamField>
+
+<ParamField body="hide_problem_tags" type="boolean" optional>
+  Hide problem tags by default
+</ParamField>
+
+<ParamField body="is_private" type="boolean" optional>
+  Make profile private
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Get User Statistics
+
+`GET /api/user/stats/`
+
+Returns statistics and activity for a user.
+
+<ParamField query="username" type="string" required>
+  Username to get statistics for
+</ParamField>
+
+<ResponseField name="stats" type="array">
+  Array of daily activity objects
+  <ResponseField name="date" type="string">
+    Date (YYYY-MM-DD)
+  </ResponseField>
+  <ResponseField name="runs" type="integer">
+    Number of submissions
+  </ResponseField>
+  <ResponseField name="verdict" type="string">
+    Most common verdict
+  </ResponseField>
+</ResponseField>
+
+## Get User Rank
+
+`GET /api/user/rank/`
+
+Returns the user ranking list.
+
+<ParamField query="offset" type="integer" optional>
+  Starting position (default: 0)
+</ParamField>
+
+<ParamField query="rowcount" type="integer" optional>
+  Number of results (default: 100)
+</ParamField>
+
+<ParamField query="filter" type="string" optional>
+  Filter by country, state, or school
+</ParamField>
+
+<ResponseField name="rank" type="array">
+  Array of ranked users
+  <ResponseField name="username" type="string">
+    Username
+  </ResponseField>
+  <ResponseField name="name" type="string" nullable>
+    Full name
+  </ResponseField>
+  <ResponseField name="problems_solved" type="integer">
+    Problems solved
+  </ResponseField>
+  <ResponseField name="score" type="float">
+    Ranking score
+  </ResponseField>
+  <ResponseField name="ranking" type="integer">
+    Global rank position
+  </ResponseField>
+  <ResponseField name="country_id" type="string" nullable>
+    Country code
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  Total number of ranked users
+</ResponseField>
+
+## Get Coder of the Month
+
+`GET /api/user/coderOfTheMonth/`
+
+Returns the current coder of the month.
+
+<ParamField query="category" type="enum" optional>
+  Category: `all`, `female` (default: `all`)
+</ParamField>
+
+<ResponseField name="username" type="string">
+  Username
+</ResponseField>
+
+<ResponseField name="country_id" type="string">
+  Country code
+</ResponseField>
+
+<ResponseField name="problems_solved" type="integer">
+  Problems solved this month
+</ResponseField>
+
+<ResponseField name="score" type="float">
+  Monthly score
+</ResponseField>
+
+## List Associated Identities
+
+`GET /api/user/associatedIdentities/`
+
+Returns all identities associated with the authenticated user.
+
+<ResponseField name="identities" type="array">
+  Array of identity objects
+  <ResponseField name="username" type="string">
+    Identity username
+  </ResponseField>
+  <ResponseField name="default" type="boolean">
+    Whether this is the default identity
+  </ResponseField>
+</ResponseField>
+
+## Password Requirements
+
+Passwords must meet these criteria:
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+
+## Authentication
+
+After login, include the auth token in subsequent requests:
+
+```bash
+curl -H "Authorization: token YOUR_AUTH_TOKEN" \
+  https://omegaup.com/api/user/profile/
+```
+
+## Example: User Registration
+
+```bash
+curl -X POST https://omegaup.com/api/user/create/ \
+  -d '{
+    "username": "johndoe",
+    "password": "SecurePass123",
+    "email": "john@example.com",
+    "name": "John Doe"
+  }'
+```
+
+## Example: User Login
+
+```bash
+curl -X POST https://omegaup.com/api/user/login/ \
+  -d '{
+    "usernameOrEmail": "johndoe",
+    "password": "SecurePass123"
+  }'
+```
+
+## Example: Get User Profile
+
+```bash
+curl "https://omegaup.com/api/user/profile/?username=johndoe"
+```

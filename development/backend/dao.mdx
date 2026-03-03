@@ -1,0 +1,583 @@
+---
+title: Data Access Objects (DAOs) and Value Objects
+description: Understanding omegaUp's database layer and data modeling patterns
+---
+
+## Overview
+
+omegaUp uses the **DAO (Data Access Object)** pattern to abstract database operations. The architecture consists of:
+
+- **Value Objects (VOs)** - Represent database table rows as PHP objects
+- **Base DAOs** - Auto-generated CRUD operations
+- **Extended DAOs** - Custom queries and business-specific operations
+
+All database code is located in:
+- `frontend/server/src/DAO/` - DAO classes
+- `frontend/server/src/DAO/VO/` - Value Object classes
+- `frontend/server/src/DAO/Base/` - Auto-generated base classes
+
+## Value Objects (VOs)
+
+### What is a Value Object?
+
+A Value Object represents a single row from a database table. Each VO:
+- Has properties matching table columns
+- Provides type safety for database data
+- Is immutable after creation
+- Contains no business logic
+
+### VO Structure
+
+Example: `Users` Value Object (`frontend/server/src/DAO/VO/Users.php`):
+
+```php
+namespace OmegaUp\DAO\VO;
+
+class Users extends \OmegaUp\DAO\VO\VO {
+    const FIELD_NAMES = [
+        'user_id' => true,
+        'facebook_user_id' => true,
+        'git_token' => true,
+        'main_email_id' => true,
+        'main_identity_id' => true,
+        'verified' => true,
+        'preferred_language' => true,
+        // ... more fields
+    ];
+
+    public ?int $user_id = null;
+    public ?string $facebook_user_id = null;
+    public ?string $git_token = null;
+    public ?int $main_email_id = null;
+    public ?int $main_identity_id = null;
+    public bool $verified = false;
+    public ?string $preferred_language = null;
+    // ... more properties
+
+    public function __construct(?array $data = null) {
+        if (empty($data)) {
+            return;
+        }
+        
+        // Validate no unknown columns
+        $unknownColumns = array_diff_key($data, self::FIELD_NAMES);
+        if (!empty($unknownColumns)) {
+            throw new \Exception(
+                'Unknown columns: ' . join(', ', array_keys($unknownColumns))
+            );
+        }
+
+        // Set properties from data
+        if (isset($data['user_id'])) {
+            $this->user_id = intval($data['user_id']);
+        }
+        // ... more field assignments
+    }
+}
+```
+
+### Creating VOs
+
+```php
+// From database result
+$userData = ['user_id' => 1, 'verified' => true, ...];
+$user = new \OmegaUp\DAO\VO\Users($userData);
+
+// New object for insertion
+$newUser = new \OmegaUp\DAO\VO\Users([
+    'verified' => false,
+    'preferred_language' => 'es',
+]);
+```
+
+## Data Access Objects (DAOs)
+
+### Base DAO (Auto-generated)
+
+Base DAOs provide standard CRUD operations and are **automatically generated**. Never modify these files directly.
+
+Example: `Base\Users` (`frontend/server/src/DAO/Base/Users.php`):
+
+```php
+namespace OmegaUp\DAO\Base;
+
+abstract class Users {
+    /**
+     * Update record
+     */
+    final public static function update(
+        \OmegaUp\DAO\VO\Users $Users
+    ): int {
+        $sql = '
+            UPDATE `Users`
+            SET
+                `facebook_user_id` = ?,
+                `git_token` = ?,
+                `main_email_id` = ?,
+                `verified` = ?,
+                `preferred_language` = ?
+            WHERE
+                `user_id` = ?;';
+        
+        $params = [
+            $Users->facebook_user_id,
+            $Users->git_token,
+            $Users->main_email_id,
+            $Users->verified,
+            $Users->preferred_language,
+            $Users->user_id,
+        ];
+        
+        return \OmegaUp\MySQLConnection::getInstance()
+            ->Execute($sql, $params);
+    }
+
+    /**
+     * Create record
+     */
+    final public static function create(
+        \OmegaUp\DAO\VO\Users $Users
+    ): int {
+        $sql = '
+            INSERT INTO `Users` (
+                `facebook_user_id`,
+                `git_token`,
+                `main_email_id`,
+                `verified`,
+                `preferred_language`
+            ) VALUES (?, ?, ?, ?, ?);';
+        
+        $params = [
+            $Users->facebook_user_id,
+            $Users->git_token,
+            $Users->main_email_id,
+            $Users->verified,
+            $Users->preferred_language,
+        ];
+        
+        \OmegaUp\MySQLConnection::getInstance()
+            ->Execute($sql, $params);
+        
+        return intval(
+            \OmegaUp\MySQLConnection::getInstance()->Insert_ID()
+        );
+    }
+
+    /**
+     * Delete record
+     */
+    final public static function delete(
+        \OmegaUp\DAO\VO\Users $Users
+    ): int {
+        $sql = 'DELETE FROM `Users` WHERE `user_id` = ?;';
+        $params = [$Users->user_id];
+        
+        return \OmegaUp\MySQLConnection::getInstance()
+            ->Execute($sql, $params);
+    }
+
+    /**
+     * Get by primary key
+     */
+    final public static function getByPK(
+        int $user_id
+    ): ?\OmegaUp\DAO\VO\Users {
+        $sql = 'SELECT * FROM `Users` WHERE `user_id` = ? LIMIT 1;';
+        $row = \OmegaUp\MySQLConnection::getInstance()
+            ->GetRow($sql, [$user_id]);
+        
+        if (empty($row)) {
+            return null;
+        }
+        
+        return new \OmegaUp\DAO\VO\Users($row);
+    }
+}
+```
+
+### Extended DAO (Custom Queries)
+
+Extended DAOs inherit from Base DAOs and add custom business logic.
+
+Example: `Users` DAO (`frontend/server/src/DAO/Users.php`):
+
+```php
+namespace OmegaUp\DAO;
+
+class Users extends \OmegaUp\DAO\Base\Users {
+    /**
+     * Find user by email address
+     */
+    public static function findByEmail(string $email): ?\OmegaUp\DAO\VO\Users {
+        $fields = join(
+            ', ',
+            array_map(
+                fn (string $field): string => "u.{$field}",
+                array_keys(\OmegaUp\DAO\VO\Users::FIELD_NAMES)
+            )
+        );
+        
+        $sql = "SELECT {$fields}
+                FROM `Users` u
+                INNER JOIN `Emails` e ON e.user_id = u.user_id
+                WHERE e.email = ?;";
+        
+        $row = \OmegaUp\MySQLConnection::getInstance()
+            ->GetRow($sql, [$email]);
+        
+        if (empty($row)) {
+            return null;
+        }
+        
+        return new \OmegaUp\DAO\VO\Users($row);
+    }
+
+    /**
+     * Find user by username (joins with Identities table)
+     */
+    public static function FindByUsername(
+        string $username
+    ): ?\OmegaUp\DAO\VO\Users {
+        $fields = join(
+            ', ',
+            array_map(
+                fn (string $field): string => "u.{$field}",
+                array_keys(\OmegaUp\DAO\VO\Users::FIELD_NAMES)
+            )
+        );
+        
+        $sql = "SELECT {$fields}
+                FROM Users u
+                INNER JOIN Identities i ON i.user_id = u.user_id
+                WHERE i.username = ?
+                LIMIT 1;";
+        
+        $row = \OmegaUp\MySQLConnection::getInstance()
+            ->GetRow($sql, [$username]);
+        
+        if (empty($row)) {
+            return null;
+        }
+        
+        return new \OmegaUp\DAO\VO\Users($row);
+    }
+
+    /**
+     * Get extended profile data with joins
+     */
+    final public static function getExtendedProfileDataByPk(
+        int $userId
+    ): ?array {
+        $sql = 'SELECT
+                    IFNULL(c.`name`, "xx") AS country,
+                    c.`country_id`,
+                    s.`name` AS state,
+                    s.`state_id`,
+                    sc.`name` AS school,
+                    u.`verified`,
+                    u.`hide_problem_tags`
+                FROM `Users` u
+                LEFT JOIN `Identities` i ON i.user_id = u.user_id
+                LEFT JOIN `Countries` c ON c.country_id = i.country_id
+                LEFT JOIN `States` s ON s.state_id = i.state_id
+                LEFT JOIN `Identities_Schools` isc
+                    ON isc.identity_school_id = i.current_identity_school_id
+                LEFT JOIN `Schools` sc ON sc.school_id = isc.school_id
+                WHERE u.`user_id` = ?
+                LIMIT 1;';
+        
+        return \OmegaUp\MySQLConnection::getInstance()
+            ->GetRow($sql, [$userId]);
+    }
+}
+```
+
+## Common DAO Operations
+
+### Create (Insert)
+
+```php
+// Create a new contest
+$contest = new \OmegaUp\DAO\VO\Contests([
+    'title' => 'Programming Contest 2026',
+    'alias' => 'contest-2026',
+    'start_time' => $startTime,
+    'finish_time' => $finishTime,
+]);
+
+$contestId = \OmegaUp\DAO\Contests::create($contest);
+```
+
+### Read (Select)
+
+```php
+// Get by primary key
+$user = \OmegaUp\DAO\Users::getByPK(42);
+
+// Custom query
+$user = \OmegaUp\DAO\Users::findByEmail('user@example.com');
+$user = \OmegaUp\DAO\Users::FindByUsername('john_doe');
+
+// Get problem by alias
+$problem = \OmegaUp\DAO\Problems::getByAlias('sum-of-two-numbers');
+```
+
+### Update
+
+```php
+// Fetch existing record
+$user = \OmegaUp\DAO\Users::getByPK(42);
+
+// Modify properties
+$user->verified = true;
+$user->preferred_language = 'en';
+
+// Save to database
+\OmegaUp\DAO\Users::update($user);
+```
+
+### Delete
+
+```php
+$problem = \OmegaUp\DAO\Problems::getByPK(123);
+\OmegaUp\DAO\Problems::delete($problem);
+```
+
+## Database Interaction Patterns
+
+### Simple Query
+
+```php
+public static function getProblemsByUser(
+    int $userId
+): array {
+    $sql = 'SELECT
+                p.problem_id,
+                p.title,
+                p.alias
+            FROM Problems p
+            INNER JOIN Runs r ON r.problem_id = p.problem_id
+            WHERE r.user_id = ?
+            GROUP BY p.problem_id;';
+    
+    return \OmegaUp\MySQLConnection::getInstance()
+        ->GetAll($sql, [$userId]);
+}
+```
+
+### Query with Pagination
+
+```php
+public static function getContestList(
+    int $page,
+    int $pageSize
+): array {
+    $offset = ($page - 1) * $pageSize;
+    
+    $sql = 'SELECT *
+            FROM Contests
+            WHERE finish_time > NOW()
+            ORDER BY start_time ASC
+            LIMIT ?, ?;';
+    
+    return \OmegaUp\MySQLConnection::getInstance()
+        ->GetAll($sql, [$offset, $pageSize]);
+}
+```
+
+### Complex Join Query
+
+```php
+public static function getContestScoreboard(
+    int $problemsetId
+): array {
+    $sql = '
+        SELECT
+            i.username,
+            i.name,
+            c.country_id,
+            SUM(r.contest_score) AS total_score
+        FROM
+            Identities i
+        INNER JOIN
+            Problemset_Identities pi
+            ON pi.identity_id = i.identity_id
+        LEFT JOIN
+            Countries c
+            ON c.country_id = i.country_id
+        LEFT JOIN
+            Runs r
+            ON r.identity_id = i.identity_id
+            AND r.problemset_id = ?
+        WHERE
+            pi.problemset_id = ?
+        GROUP BY
+            i.identity_id
+        ORDER BY
+            total_score DESC;';
+    
+    return \OmegaUp\MySQLConnection::getInstance()
+        ->GetAll($sql, [$problemsetId, $problemsetId]);
+}
+```
+
+## Transaction Support
+
+For operations that need to be atomic:
+
+```php
+// Begin transaction
+\OmegaUp\DAO\DAO::transBegin();
+
+try {
+    // Create contest
+    $contest = new \OmegaUp\DAO\VO\Contests([...]);
+    $contestId = \OmegaUp\DAO\Contests::create($contest);
+    
+    // Create associated problemset
+    $problemset = new \OmegaUp\DAO\VO\Problemsets([
+        'contest_id' => $contestId,
+        // ...
+    ]);
+    \OmegaUp\DAO\Problemsets::create($problemset);
+    
+    // Add problems to contest
+    foreach ($problems as $problem) {
+        $pp = new \OmegaUp\DAO\VO\ProblemsetProblems([
+            'problemset_id' => $problemset->problemset_id,
+            'problem_id' => $problem->problem_id,
+        ]);
+        \OmegaUp\DAO\ProblemsetProblems::create($pp);
+    }
+    
+    // Commit transaction
+    \OmegaUp\DAO\DAO::transEnd();
+} catch (\Exception $e) {
+    // Rollback on error
+    \OmegaUp\DAO\DAO::transRollback();
+    throw $e;
+}
+```
+
+## Available DAOs
+
+omegaUp has DAOs for all database tables:
+
+### Core Entities
+- **Users** - User accounts
+- **Identities** - User identities (users can have multiple)
+- **Problems** - Programming problems
+- **Contests** - Programming contests
+- **Courses** - Educational courses
+- **Assignments** - Course assignments
+- **Runs** - Code submissions
+
+### Associations
+- **ProblemsetProblems** - Problems in contests/assignments
+- **ProblemsetIdentities** - Users enrolled in contests
+- **GroupsIdentities** - Users in groups
+- **UserRoles** - User permission roles
+
+### Supporting Tables
+- **Clarifications** - Questions and answers
+- **Tags** - Problem categories
+- **Schools** - Educational institutions
+- **Countries** / **States** - Geographic data
+- **Badges** - User achievements
+- **Certificates** - Contest certificates
+
+## Database Connection
+
+The `MySQLConnection` singleton manages database connections:
+
+```php
+$conn = \OmegaUp\MySQLConnection::getInstance();
+
+// Execute query (INSERT, UPDATE, DELETE)
+$affectedRows = $conn->Execute($sql, $params);
+
+// Get single row
+$row = $conn->GetRow($sql, $params);
+
+// Get all rows
+$rows = $conn->GetAll($sql, $params);
+
+// Get single value
+$count = $conn->GetOne($sql, $params);
+
+// Get last insert ID
+$id = $conn->Insert_ID();
+```
+
+## Best Practices
+
+### DO:
+
+1. **Use Value Objects for type safety**
+   ```php
+   $user = new \OmegaUp\DAO\VO\Users($data);
+   ```
+
+2. **Use parameterized queries (prevents SQL injection)**
+   ```php
+   $sql = 'SELECT * FROM Users WHERE user_id = ?;';
+   $row = $conn->GetRow($sql, [$userId]);
+   ```
+
+3. **Create custom methods in extended DAOs**
+   ```php
+   class Users extends \OmegaUp\DAO\Base\Users {
+       public static function findByEmail(string $email) { ... }
+   }
+   ```
+
+4. **Use transactions for multi-step operations**
+
+### DON'T:
+
+1. **Never modify Base DAO classes** (they're auto-generated)
+2. **Don't concatenate SQL strings** (use parameterized queries)
+3. **Don't put business logic in DAOs** (use Controllers or separate services)
+4. **Don't use raw SQL in Controllers** (use DAO methods)
+
+## Code Generation
+
+Base DAOs and VOs are automatically generated from the database schema. To regenerate:
+
+```bash
+# Generate DAOs from current database schema
+cd frontend/server
+php src/DAO/scripts/generate_dao.php
+```
+
+This reads the MySQL schema and generates:
+- `DAO/Base/{Table}.php` - Base DAO with CRUD operations
+- `DAO/VO/{Table}.php` - Value Object class
+
+## Type Safety with Psalm
+
+DAOs use Psalm annotations for static type checking:
+
+```php
+/**
+ * @return list<array{user_id: int, username: string, country: string}>
+ */
+public static function getTopUsers(int $limit): array {
+    $sql = 'SELECT u.user_id, i.username, c.country_id AS country
+            FROM Users u
+            INNER JOIN Identities i ON i.user_id = u.user_id
+            LEFT JOIN Countries c ON c.country_id = i.country_id
+            ORDER BY u.user_id ASC
+            LIMIT ?;';
+    
+    /** @var list<array{user_id: int, username: string, country: string}> */
+    return \OmegaUp\MySQLConnection::getInstance()
+        ->GetAll($sql, [$limit]);
+}
+```
+
+## Next Steps
+
+- [Controllers](./controllers) - Learn about the API layer
+- [Business Logic](./business-logic) - Understand service orchestration
+- [Database Schema](https://github.com/omegaup/omegaup/tree/main/frontend/database) - View table definitions

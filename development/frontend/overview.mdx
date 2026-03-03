@@ -1,0 +1,250 @@
+---
+title: Frontend Architecture Overview
+description: Overview of omegaUp's frontend architecture and directory structure
+---
+
+# Frontend Architecture Overview
+
+omegaUp's frontend is built with a modern web stack using Vue.js, TypeScript, and Webpack. The architecture follows a modular pattern with clear separation between components, controllers, and templates.
+
+## Technology Stack
+
+- **Vue.js 2.7.16** - Progressive JavaScript framework for building user interfaces
+- **TypeScript 4.4.4** - Typed superset of JavaScript for better developer experience
+- **Webpack 5** - Module bundler for compiling and optimizing frontend assets
+- **Bootstrap 4.6.0** - CSS framework for responsive design
+- **Storybook 7.4.6** - Component development and documentation tool
+
+## Directory Structure
+
+The frontend codebase is organized under `frontend/www/` with the following structure:
+
+### Core Directories
+
+#### `frontend/www/js/`
+Contains all JavaScript and TypeScript source files. This is the heart of the frontend application:
+
+- **`omegaup/`** - Main application code
+  - `components/` - Vue components (reusable UI elements)
+  - `arena/` - Contest and course arena controllers
+  - `problem/` - Problem-related controllers
+  - `course/` - Course management controllers
+  - `contest/` - Contest management controllers
+  - `user/` - User profile and settings controllers
+  - `api.ts` - API client for backend communication
+  - `api_types.ts` - TypeScript type definitions for API
+  - `lang.ts` - Internationalization support
+
+#### `frontend/www/css/`
+Contains all stylesheets without minification. Styles are organized by feature and compiled using Sass.
+
+#### `frontend/www/admin/`
+Admin panel specific files and resources.
+
+#### `frontend/templates/`
+Server-side templates that render the initial HTML structure:
+
+- `template.tpl` - Base template
+- Language files (`en.lang`, `es.lang`, `pt.lang`, `pseudo.lang`)
+- `external-links-config.json` - External link configurations
+
+## Frontend Architecture Pattern
+
+omegaUp follows a **component-based architecture** with the following layers:
+
+### 1. Controllers (Entry Points)
+
+Controllers are TypeScript files that serve as entry points for each page. They:
+- Initialize Vue components
+- Fetch data from the API
+- Handle page-level logic
+- Connect to the backend via the API layer
+
+**Example controllers:**
+- `arena/contest_contestant.ts` - Contest participant view
+- `problem/details.ts` - Problem detail page
+- `course/edit.ts` - Course editing interface
+
+### 2. Vue Components
+
+Reusable UI components built with Vue.js Single File Components (`.vue` files). Located in `frontend/www/js/omegaup/components/`, organized by feature:
+
+- `user/` - User-related components
+- `problem/` - Problem display and editing
+- `arena/` - Contest/course arena UI
+- `course/` - Course management UI
+
+Each component follows the structure:
+```vue
+<template>
+  <!-- HTML template -->
+</template>
+
+<script lang="ts">
+// TypeScript logic with vue-property-decorator
+</script>
+
+<style lang="scss">
+/* Component-specific styles */
+</style>
+```
+
+### 3. API Layer
+
+The `api.ts` file provides a typed interface to communicate with the backend:
+- Type-safe API calls using TypeScript
+- Centralized error handling
+- Request/response transformation
+
+### 4. Data Access Layer (Backend)
+
+The backend follows a DAO (Data Access Object) pattern:
+
+- **DAO/VO**: Data access objects and value objects map directly to database tables
+- **Controllers**: Business logic layer that uses DAOs
+- **Templates**: Render the initial HTML structure
+
+## Webpack Configuration
+
+The build process is managed by Webpack with multiple configurations:
+
+### `webpack.config.js`
+Main configuration file that:
+- Imports frontend and style configurations
+- Configures development and production modes
+- Sets up source maps and dev server
+- Handles hot module replacement
+
+### `webpack.config-frontend.js`
+Frontend-specific configuration:
+
+**Entry Points**: Each page has its own entry point:
+```javascript
+entry: {
+  omegaup: ['core-js/stable', 'regenerator-runtime/runtime', ...],
+  arena_contest_contestant: './frontend/www/js/omegaup/arena/contest_contestant.ts',
+  problem_details: './frontend/www/js/omegaup/problem/details.ts',
+  // ... many more entries
+}
+```
+
+**Output Configuration**:
+```javascript
+output: {
+  path: './frontend/www/',
+  publicPath: '/',
+  filename: 'js/dist/[name].js',
+  library: '[name]',
+  libraryTarget: 'umd'
+}
+```
+
+**Key Plugins**:
+- **VueLoaderPlugin**: Compiles `.vue` files
+- **ForkTsCheckerWebpackPlugin**: Type checks TypeScript in parallel
+- **MonacoWebpackPlugin**: Bundles Monaco editor for code editing
+- **CopyWebpackPlugin**: Copies static assets like badges
+
+**Module Rules**:
+- `.vue` files → `vue-loader`
+- `.ts` files → `ts-loader` (with Vue support)
+- `.js` files → `babel-loader`
+- `.scss` files → `sass-loader` → `css-loader`
+
+**Code Splitting**: Webpack splits vendor code into separate chunks:
+- `npm.core-js` - Core JavaScript polyfills
+- `npm.jszip` - ZIP file handling
+- `npm.*` - Other npm packages
+- `commons` - Shared application code
+
+## TypeScript Configuration
+
+The `tsconfig.json` configures TypeScript compilation:
+
+```json
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "esnext",
+    "strict": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "paths": {
+      "@/*": ["frontend/www/*"]
+    }
+  },
+  "include": [
+    "./frontend/www/js/omegaup/**/*.vue",
+    "./frontend/www/**/*.ts"
+  ]
+}
+```
+
+**Key settings**:
+- `experimentalDecorators`: Enables Vue property decorators
+- `strict`: Full TypeScript strict mode
+- `target: es6`: Compiles to ES6 for modern browsers
+- Path aliases for cleaner imports
+
+## Build Scripts
+
+Defined in `package.json`:
+
+```bash
+# Development build (watch mode)
+yarn dev:watch
+
+# Production build
+yarn build
+
+# Development build (single run)
+yarn dev
+
+# Build all targets
+yarn dev-all
+
+# Run tests
+yarn test
+
+# Run Storybook
+yarn storybook
+```
+
+## Development Workflow
+
+1. **Component Development**: Create Vue components in `components/` directory
+2. **Controller Setup**: Create controller in appropriate subdirectory (arena, problem, etc.)
+3. **API Integration**: Use the API layer to fetch data from backend
+4. **Styling**: Add component-specific styles using SCSS
+5. **Testing**: Write tests alongside components (`.test.ts` files)
+6. **Documentation**: Create Storybook stories (`.stories.ts` files)
+
+## Key Features
+
+### Hot Module Replacement
+Webpack dev server supports HMR for rapid development without full page reloads.
+
+### Code Splitting
+Automatic code splitting reduces initial bundle size and improves load times.
+
+### Type Safety
+TypeScript provides compile-time type checking for better code quality.
+
+### Component Isolation
+Storybook allows developing and testing components in isolation.
+
+## Best Practices
+
+1. **Keep components small and focused** - Each component should do one thing well
+2. **Use TypeScript types** - Define interfaces for props and data
+3. **Follow Vue style guide** - Use recommended Vue.js patterns
+4. **Write Storybook stories** - Document component variations
+5. **Use the API layer** - Never make direct HTTP requests in components
+6. **Organize by feature** - Group related components together
+
+## Related Documentation
+
+- [Vue Component Development](/development/frontend/vue-components)
+- [TypeScript Guidelines](/development/frontend/typescript)
+- [Storybook Documentation](/development/frontend/storybook)

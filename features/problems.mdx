@@ -1,0 +1,143 @@
+---
+title: Problem library
+description: Access thousands of programming challenges with powerful search and filtering capabilities
+---
+
+## Overview
+
+omegaUp hosts a vast collection of competitive programming problems ranging from beginner-friendly exercises to expert-level challenges. The problem library includes comprehensive search, filtering, and quality rating systems to help you find the right challenges.
+
+## Problem organization
+
+Problems in omegaUp are organized with multiple classification systems:
+
+<CardGroup cols={2}>
+  <Card title="Difficulty levels" icon="signal">
+    Problems are rated from easy to expert based on acceptance rates and community feedback
+  </Card>
+  <Card title="Topic tags" icon="tags">
+    Filter by algorithms, data structures, mathematics, graphs, dynamic programming, and more
+  </Card>
+  <Card title="Quality ratings" icon="star">
+    Community-driven quality scores with detailed histograms and reviews
+  </Card>
+  <Card title="Language support" icon="code">
+    See which programming languages each problem accepts (C, C++, Java, Python, etc.)
+  </Card>
+</CardGroup>
+
+## Problem statistics
+
+Each problem displays comprehensive statistics to help you choose challenges:
+
+```json
+{
+  "accepted": 1247,
+  "submissions": 3891,
+  "ratio": 0.32,
+  "quality": 4.2,
+  "difficulty": 2.8,
+  "points": 100,
+  "visits": 15432
+}
+```
+
+<Tip>
+  Use the **quality seal** indicator to find well-crafted problems that have been reviewed and approved by the community.
+</Tip>
+
+### Understanding metrics
+
+- **Acceptance ratio**: Shows the percentage of submissions that were accepted
+- **Quality score**: Community rating from 1-5 stars
+- **Difficulty rating**: Statistical measure based on solver performance
+- **Points**: Base score awarded for solving the problem
+- **Visits**: Total number of users who viewed the problem
+
+## Search and filtering
+
+Find the perfect problem using our powerful search tools:
+
+### Search options
+
+- **Keyword search**: Search in problem titles and descriptions
+- **Tag filtering**: Filter by single or multiple tags simultaneously
+- **Difficulty range**: Set minimum and maximum difficulty thresholds
+- **Quality threshold**: Show only problems above a certain quality rating
+- **Language filter**: Find problems that support specific programming languages
+
+### Sorting options
+
+Sort results by:
+- Difficulty (ascending/descending)
+- Quality rating
+- Number of submissions
+- Acceptance ratio
+- Point value
+- Most recent
+
+## Problem types
+
+omegaUp supports various problem types:
+
+<AccordionGroup>
+  <Accordion title="Standard problems">
+    Classic input/output problems where your program reads from standard input and writes to standard output.
+  </Accordion>
+
+  <Accordion title="Interactive problems">
+    Problems where your solution interacts with a judge program using libinteractive. Perfect for game-theory and communication challenges.
+  </Accordion>
+
+  <Accordion title="Karel problems">
+    Educational robot programming problems using karel.js, ideal for beginners learning programming concepts.
+  </Accordion>
+
+  <Accordion title="Output-only problems">
+    Problems where you download input files, solve them offline, and upload your output files.
+  </Accordion>
+</AccordionGroup>
+
+## Quality assurance
+
+<Steps>
+  <Step title="Community review">
+    Problems can be nominated for quality review by users who have solved them
+  </Step>
+  
+  <Step title="Reviewer evaluation">
+    Experienced reviewers assess problem clarity, test case coverage, and overall quality
+  </Step>
+  
+  <Step title="Quality seal">
+    High-quality problems receive a quality seal and higher visibility in search results
+  </Step>
+</Steps>
+
+<Info>
+  The quality nomination system helps ensure that problems meet high standards for educational value and technical correctness.
+</Info>
+
+## Problem details page
+
+When viewing a problem, you'll see:
+
+- **Problem statement**: Clear description with examples
+- **Input/output format**: Specification of expected formats
+- **Constraints**: Time limits, memory limits, and data constraints
+- **Sample cases**: Example inputs and outputs with explanations
+- **Statistics**: Submission counts, acceptance rates, and solver lists
+- **Similar problems**: Recommendations for related challenges
+
+## Creating your own problems
+
+Interested in contributing problems? See our [Creating problems guide](/guides/creating-problems) for detailed instructions on problem creation, test case design, and submission.
+
+<CardGroup cols={2}>
+  <Card title="Creating problems" icon="pencil" href="/guides/creating-problems">
+    Learn how to create and submit your own problems
+  </Card>
+  <Card title="Problem API" icon="code" href="/api/problem">
+    Access the Problem API for programmatic problem management
+  </Card>
+</CardGroup>

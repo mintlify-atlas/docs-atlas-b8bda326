@@ -1,0 +1,374 @@
+---
+title: PHP Controllers and API Structure
+description: Understanding omegaUp's controller architecture and API endpoint patterns
+---
+
+## Overview
+
+omegaUp's backend uses a **Controller-DAO-VO architecture** to handle API requests. Controllers act as the entry point for all API calls, handling authentication, validation, and orchestrating business logic through DAOs (Data Access Objects).
+
+All controllers are located in `frontend/server/src/Controllers/` and extend the base `Controller` class.
+
+## Controller Structure
+
+### Base Controller
+
+The `Controller` class (`frontend/server/src/Controllers/Controller.php`) provides common functionality for all controllers:
+
+```php
+namespace OmegaUp\Controllers;
+
+class Controller {
+    /** @var \Monolog\Logger */
+    public static $log;
+
+    // Common authentication methods
+    protected static function authenticateOrAllowUnauthenticatedRequest(
+        \OmegaUp\Request $r
+    ): void {
+        // Handles optional authentication
+    }
+
+    // Resolves target user from request
+    protected static function resolveTargetUser(
+        \OmegaUp\Request $r
+    ): ?\OmegaUp\DAO\VO\Users {
+        // Returns user object from request or current session
+    }
+}
+```
+
+### Controller Naming Convention
+
+Each controller:
+- Is named after the resource it manages (e.g., `Contest`, `Problem`, `User`)
+- Contains static methods that map to API endpoints
+- Uses the `api` prefix for public API methods
+- Follows the pattern: `api{Action}` (e.g., `apiList`, `apiCreate`, `apiUpdate`)
+
+## API Endpoint Structure
+
+API endpoints follow a consistent URL pattern:
+
+```
+/api/{controller}/{action}/
+```
+
+### Examples
+
+- `/api/contest/list/` → `Contest::apiList()`
+- `/api/problem/details/` → `Problem::apiDetails()`
+- `/api/user/create/` → `User::apiCreate()`
+- `/api/run/create/` → `Run::apiCreate()`
+
+## Controller Examples
+
+### Contest Controller
+
+The Contest controller (`Contest.php`) manages contest operations:
+
+```php
+namespace OmegaUp\Controllers;
+
+class Contest extends \OmegaUp\Controllers\Controller {
+    const SHOW_INTRO = true;
+    const MAX_CONTEST_LENGTH_SECONDS = 60 * 60 * 24 * 31; // 31 days
+    const CONTEST_LIST_PAGE_SIZE = 10;
+
+    /**
+     * Returns a list of contests
+     *
+     * @return array{number_of_results: int, results: list<ContestListItem>}
+     */
+    public static function apiList(\OmegaUp\Request $r): array {
+        // Check authentication (optional for listing)
+        try {
+            $r->ensureIdentity();
+        } catch (\OmegaUp\Exceptions\UnauthorizedException $e) {
+            // Allow unauthenticated access
+        }
+
+        // Extract and validate parameters
+        $page = $r->ensureOptionalInt('page') ?? 1;
+        $pageSize = $r->ensureOptionalInt(
+            key: 'page_size',
+            lowerBound: 1,
+            upperBound: 100
+        ) ?? self::CONTEST_LIST_PAGE_SIZE;
+
+        // Query database through DAO
+        $contests = \OmegaUp\DAO\Contests::getAll(
+            page: $page,
+            pageSize: $pageSize
+        );
+
+        return [
+            'number_of_results' => count($contests),
+            'results' => $contests,
+        ];
+    }
+
+    /**
+     * Creates a new contest
+     *
+     * @omegaup-request-param string $title
+     * @omegaup-request-param string $description
+     * @omegaup-request-param int $start_time
+     * @omegaup-request-param int $finish_time
+     */
+    public static function apiCreate(\OmegaUp\Request $r): array {
+        // Require authentication
+        $r->ensureIdentity();
+
+        // Validate parameters
+        $title = $r->ensureString('title');
+        $startTime = $r->ensureInt('start_time');
+
+        // Check authorization
+        if (!\OmegaUp\Authorization::canCreateContest($r->identity)) {
+            throw new \OmegaUp\Exceptions\ForbiddenAccessException();
+        }
+
+        // Create contest through DAO
+        $contest = new \OmegaUp\DAO\VO\Contests([
+            'title' => $title,
+            'start_time' => $startTime,
+            // ... other fields
+        ]);
+
+        \OmegaUp\DAO\Contests::create($contest);
+
+        return ['status' => 'ok'];
+    }
+}
+```
+
+### Problem Controller
+
+The Problem controller (`Problem.php`) handles problem operations:
+
+```php
+namespace OmegaUp\Controllers;
+
+class Problem extends \OmegaUp\Controllers\Controller {
+    const SOLUTION_NOT_FOUND = 'not_found';
+    const SOLUTION_UNLOCKED = 'unlocked';
+    const SOLUTION_LOCKED = 'locked';
+    const PAGE_SIZE = 100;
+
+    /**
+     * Gets problem details
+     *
+     * @omegaup-request-param string $problem_alias
+     */
+    public static function apiDetails(\OmegaUp\Request $r): array {
+        $r->ensureIdentity();
+
+        $problemAlias = $r->ensureString('problem_alias');
+
+        // Fetch problem from database
+        $problem = \OmegaUp\DAO\Problems::getByAlias($problemAlias);
+
+        if (is_null($problem)) {
+            throw new \OmegaUp\Exceptions\NotFoundException(
+                'problemNotFound'
+            );
+        }
+
+        // Check if user has access
+        if (!\OmegaUp\Authorization::canViewProblem(
+            $r->identity,
+            $problem
+        )) {
+            throw new \OmegaUp\Exceptions\ForbiddenAccessException();
+        }
+
+        return [
+            'alias' => $problem->alias,
+            'title' => $problem->title,
+            'points' => $problem->points,
+            // ... other fields
+        ];
+    }
+}
+```
+
+## Request Flow
+
+1. **HTTP Request** arrives at `/api/contest/create/`
+2. **Router** dispatches to `Contest::apiCreate()`
+3. **Controller** method:
+   - Authenticates user via `$r->ensureIdentity()`
+   - Validates parameters via `$r->ensureString()`, `$r->ensureInt()`
+   - Checks authorization via `Authorization` class
+   - Calls DAO methods to interact with database
+   - Returns response array (auto-converted to JSON)
+
+## Authentication Patterns
+
+### Required Authentication
+
+```php
+public static function apiCreate(\OmegaUp\Request $r): array {
+    $r->ensureIdentity(); // Throws if not authenticated
+    // ... rest of method
+}
+```
+
+### Optional Authentication
+
+```php
+public static function apiList(\OmegaUp\Request $r): array {
+    try {
+        $r->ensureIdentity();
+    } catch (\OmegaUp\Exceptions\UnauthorizedException $e) {
+        // Allow unauthenticated access
+    }
+    // ... rest of method
+}
+```
+
+### Targeted User Resolution
+
+```php
+public static function apiProfile(\OmegaUp\Request $r): array {
+    self::authenticateOrAllowUnauthenticatedRequest($r);
+    
+    // Get user from request or default to current user
+    $user = self::resolveTargetUser($r);
+    // ... rest of method
+}
+```
+
+## Parameter Validation
+
+Controllers use the `Request` object for type-safe parameter extraction:
+
+```php
+// Required parameters
+$title = $r->ensureString('title');
+$contestId = $r->ensureInt('contest_id');
+$isPublic = $r->ensureBool('public');
+
+// Optional parameters with defaults
+$page = $r->ensureOptionalInt('page') ?? 1;
+$query = $r->ensureOptionalString('query') ?? '';
+
+// Parameters with bounds
+$pageSize = $r->ensureOptionalInt(
+    key: 'page_size',
+    lowerBound: 1,
+    upperBound: 100
+) ?? 20;
+
+// Enum validation
+$admissionMode = $r->ensureOptionalEnum(
+    'admission_mode',
+    ['private', 'public', 'registration']
+);
+```
+
+## Available Controllers
+
+omegaUp has 32 controllers managing different resources:
+
+### Core Resources
+- **Contest** - Contest management
+- **Problem** - Problem creation and editing
+- **Run** - Code submission and execution
+- **User** - User management and profiles
+
+### Course System
+- **Course** - Course management
+- **Assignment** - Course assignments
+
+### Social Features
+- **Clarification** - Questions and answers
+- **Notification** - User notifications
+- **Badge** - Achievement badges
+
+### Administration
+- **Admin** - Platform administration
+- **Identity** - Identity management
+- **Group** - User groups
+- **Authorization** - Access control
+
+### Supporting Features
+- **Scoreboard** - Rankings and scores
+- **QualityNomination** - Problem quality review
+- **Tag** - Problem categorization
+- **School** - Educational institutions
+- **Certificate** - Contest certificates
+
+See the [Controllers README](https://github.com/omegaup/omegaup/blob/main/frontend/server/src/Controllers/README.md) for the complete API reference.
+
+## Common Patterns
+
+### CRUD Operations
+
+Most controllers implement standard CRUD operations:
+
+- `apiCreate()` - Create new resource
+- `apiDetails()` or `apiList()` - Read resources
+- `apiUpdate()` - Update existing resource
+- `apiDelete()` or `apiRemove()` - Delete resource
+
+### Admin Operations
+
+- `apiAddAdmin()` - Grant admin access
+- `apiRemoveAdmin()` - Revoke admin access
+- `apiAdmins()` - List admins
+
+### Association Operations
+
+- `apiAddProblem()` - Add problem to contest
+- `apiRemoveProblem()` - Remove problem from contest
+- `apiAddUser()` - Add user to group
+
+## Error Handling
+
+Controllers throw specific exceptions that are automatically converted to HTTP responses:
+
+```php
+// 401 Unauthorized
+throw new \OmegaUp\Exceptions\UnauthorizedException();
+
+// 403 Forbidden
+throw new \OmegaUp\Exceptions\ForbiddenAccessException('lockdown');
+
+// 404 Not Found
+throw new \OmegaUp\Exceptions\NotFoundException('problemNotFound');
+
+// 400 Bad Request
+throw new \OmegaUp\Exceptions\InvalidParameterException(
+    'parameterInvalid',
+    'title'
+);
+```
+
+## Type Documentation
+
+Controllers use extensive PHPDoc type definitions for API contracts:
+
+```php
+/**
+ * @psalm-type Contest=array{alias: string, title: string, start_time: \OmegaUp\Timestamp, ...}
+ * @psalm-type ContestListItem=array{...}
+ */
+class Contest extends \OmegaUp\Controllers\Controller {
+    /**
+     * @return array{results: list<ContestListItem>}
+     */
+    public static function apiList(\OmegaUp\Request $r): array {
+        // ...
+    }
+}
+```
+
+These types are validated by Psalm during static analysis.
+
+## Next Steps
+
+- [Data Access Objects (DAOs)](./dao) - Learn about database interactions
+- [Business Logic](./business-logic) - Understand the service layer
+- [API Reference](https://github.com/omegaup/omegaup/blob/main/frontend/server/src/Controllers/README.md) - Complete API documentation

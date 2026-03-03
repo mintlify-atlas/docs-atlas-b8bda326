@@ -1,0 +1,101 @@
+---
+title: Authorization API
+description: Authorization and access control endpoints for problem permissions
+---
+
+## Overview
+
+The Authorization API provides endpoints to check user permissions and access levels for problems. This API is primarily designed for internal use by the gitserver.
+
+<Warning>
+This API is intended for gitserver use only. Authentication requires a pre-shared secret token (`OMEGAUP_GITSERVER_SECRET_TOKEN`) instead of regular user sessions.
+</Warning>
+
+## Check Problem Authorization
+
+Determine a user's permissions and access level for a specific problem.
+
+**Endpoint:** `POST /api/authorization/problem/`
+
+**Authentication:** Requires `OMEGAUP_GITSERVER_SECRET_TOKEN`
+
+### Parameters
+
+<ParamField path="problem_alias" type="string" required>
+  The alias of the problem to check permissions for
+</ParamField>
+
+<ParamField path="username" type="string" required>
+  The username or email of the identity to check permissions for
+</ParamField>
+
+<ParamField path="token" type="string" required>
+  The gitserver secret token for authentication
+</ParamField>
+
+### Response
+
+<ResponseField name="has_solved" type="bool">
+  Whether the user has solved this problem
+</ResponseField>
+
+<ResponseField name="is_admin" type="bool">
+  Whether the user is an admin of this problem
+</ResponseField>
+
+<ResponseField name="can_view" type="bool">
+  Whether the user can view this problem. Returns `true` if:
+  - User can edit the problem, OR
+  - Problem is publicly visible
+</ResponseField>
+
+<ResponseField name="can_edit" type="bool">
+  Whether the user can edit this problem. Returns `true` if:
+  - User is a problem admin, OR
+  - User has been granted edit permissions
+</ResponseField>
+
+### Example Response
+
+```json
+{
+  "has_solved": true,
+  "is_admin": false,
+  "can_view": true,
+  "can_edit": false
+}
+```
+
+## Access Control Levels
+
+The API distinguishes between different permission levels:
+
+### Admin Access
+- Full control over the problem
+- Can modify all problem settings
+- Returned via `is_admin` field
+
+### Edit Access
+- Can modify problem content
+- May have restrictions compared to admin
+- Returned via `can_edit` field
+
+### View Access
+- Can see problem details
+- May be restricted to solved status or public visibility
+- Returned via `can_view` field
+
+## Authentication Details
+
+<Info>
+This endpoint uses a pre-shared secret token instead of regular session authentication because it's designed for the gitserver, which cannot maintain user sessions.
+</Info>
+
+The `token` parameter must match the `OMEGAUP_GITSERVER_SECRET_TOKEN` configured on the server. If the token is empty or doesn't match, the request will be rejected with a `ForbiddenAccessException`.
+
+## Notes
+
+- The `username` parameter accepts both usernames and email addresses
+- The identity is resolved using `Identity::resolveIdentity()`
+- If the problem is not found, a `NotFoundException` with error `"problemNotFound"` is thrown
+- This endpoint is **not intended for end-user consumption**

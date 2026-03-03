@@ -1,0 +1,125 @@
+---
+title: Welcome to omegaUp
+description: A free educational platform helping thousands of students and teachers improve their programming skills across Latin America
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.svg"
+  alt="omegaUp Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.svg"
+  alt="omegaUp Hero Dark"
+/>
+
+## What is omegaUp?
+
+omegaUp is a **free educational platform** that helps improve programming skills through competitive programming challenges. Used by tens of thousands of students and teachers throughout Latin America, omegaUp provides a comprehensive environment for learning, practicing, and competing in algorithmic problem-solving.
+
+Whether you're a student looking to sharpen your coding skills, a teacher organizing contests for your classroom, or a competitive programmer preparing for olympiads, omegaUp offers the tools and community you need to succeed.
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get started with omegaUp in minutes. Create an account and submit your first solution.
+  </Card>
+  <Card
+    title="Platform features"
+    icon="sparkles"
+    href="/features"
+  >
+    Explore the powerful features that make omegaUp the go-to platform for competitive programming.
+  </Card>
+  <Card
+    title="REST API"
+    icon="code"
+    href="/api/introduction"
+  >
+    Build integrations and tools using the omegaUp REST API.
+  </Card>
+  <Card
+    title="Contributing"
+    icon="github"
+    href="/development/contributing"
+  >
+    Join our open-source community and contribute to omegaUp development.
+  </Card>
+</CardGroup>
+
+## Built with modern technology
+
+omegaUp is built using a robust MVC architecture with industry-standard technologies:
+
+<CardGroup cols={3}>
+  <Card title="Backend" icon="server">
+    - PHP 8.1.2 controllers
+    - MySQL 8.0 database
+    - Python 3.10 for automation
+  </Card>
+  <Card title="Frontend" icon="window">
+    - Vue.js 2.7 framework
+    - TypeScript 4.4
+    - Bootstrap 4 UI
+  </Card>
+  <Card title="Grader" icon="bolt">
+    - Go-based grader system
+    - Secure sandboxing with minijail
+    - Distributed runner infrastructure
+  </Card>
+</CardGroup>
+
+## Supported browsers
+
+omegaUp officially supports all modern browsers that implement **ECMAScript 2015 (ES6)**:
+
+| Browser | Minimum version |
+| ------- | --------------- |
+| Chrome  | 51+             |
+| Firefox | 68+             |
+| Edge    | 12+             |
+| Safari  | 12+             |
+
+This includes all Blink and WebKit-based browsers compatible with the versions above.
+
+## Open source and community-driven
+
+omegaUp is fully open source under the BSD license. Our codebase is actively maintained on GitHub with contributions from developers worldwide.
+
+<Note>
+  All development happens in the open. Check out our [GitHub repository](https://github.com/omegaup/omegaup) to see the latest updates, report issues, or contribute code.
+</Note>
+
+## Architecture overview
+
+omegaUp follows the **Model-View-Controller (MVC)** design pattern:
+
+- **Model**: Data Access Objects (DAOs) and Value Objects (VOs) manage database schemas and business logic
+- **View**: Vue.js components and templates render the user interface
+- **Controller**: PHP controllers implement the REST API and handle business logic
+
+The platform includes several key components:
+
+- **Frontend**: Web application serving users, teachers, and administrators
+- **GitServer**: Version control for problem statements and test cases
+- **Grader**: Distributed system for evaluating code submissions
+- **Runners**: Isolated execution environments using Linux containers and seccomp-bpf
+
+<CardGroup cols={2}>
+  <Card title="Architecture details" icon="diagram-project" href="/architecture/overview">
+    Learn more about omegaUp's system architecture and component interactions.
+  </Card>
+  <Card title="Development setup" icon="laptop-code" href="/development/setup">
+    Set up a local development environment using Docker.
+  </Card>
+</CardGroup>
+
+## Ready to get started?
+
+<Card title="Create your account" icon="user-plus" href="/quickstart">
+  Follow our quick start guide to create an account, explore problems, and submit your first solution.
+</Card>

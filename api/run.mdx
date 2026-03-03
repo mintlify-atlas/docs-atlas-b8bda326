@@ -1,0 +1,324 @@
+---
+title: Run Submission API
+description: Submit and manage code submissions
+---
+
+The Run API allows you to submit code solutions and retrieve submission details and results.
+
+## Submit a Run
+
+`POST /api/run/create/`
+
+Submits a new code solution for a problem. Requires authentication.
+
+<ParamField body="problem_alias" type="string" required>
+  The problem alias
+</ParamField>
+
+<ParamField body="language" type="string" required>
+  Programming language (e.g., `cpp`, `java`, `py`, `c`, `cpp11`, `cpp17`)
+</ParamField>
+
+<ParamField body="source" type="string" required>
+  Source code of the solution
+</ParamField>
+
+<ParamField body="contest_alias" type="string" optional>
+  Contest alias (if submitting within a contest)
+</ParamField>
+
+<ParamField body="problemset_id" type="integer" optional>
+  Problemset ID (alternative to contest_alias)
+</ParamField>
+
+<ResponseField name="guid" type="string">
+  Unique identifier for the submission
+</ResponseField>
+
+<ResponseField name="submit_delay" type="integer">
+  Delay in minutes from contest/problem start
+</ResponseField>
+
+<ResponseField name="submission_deadline" type="timestamp">
+  Deadline for submissions
+</ResponseField>
+
+<ResponseField name="nextSubmissionTimestamp" type="timestamp">
+  Earliest time for next submission (considering submission gap)
+</ResponseField>
+
+## Get Run Status
+
+`GET /api/run/status/`
+
+Returns the current status and verdict of a submission.
+
+<ParamField query="run_alias" type="string" required>
+  The run's GUID
+</ParamField>
+
+<ParamField query="username" type="string" optional>
+  Username (for admin/public viewing)
+</ParamField>
+
+<ResponseField name="guid" type="string">
+  Run identifier
+</ResponseField>
+
+<ResponseField name="status" type="enum">
+  Run status: `new`, `waiting`, `compiling`, `running`, `ready`
+</ResponseField>
+
+<ResponseField name="verdict" type="enum">
+  Judge verdict: `AC`, `PA`, `WA`, `TLE`, `MLE`, `OLE`, `RTE`, `RFE`, `CE`, `JE`
+</ResponseField>
+
+<ResponseField name="runtime" type="integer">
+  Execution time in milliseconds
+</ResponseField>
+
+<ResponseField name="memory" type="integer">
+  Memory used in KB
+</ResponseField>
+
+<ResponseField name="score" type="float">
+  Score (0-1 range)
+</ResponseField>
+
+<ResponseField name="contest_score" type="float" nullable>
+  Weighted contest score (if in contest)
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  Programming language used
+</ResponseField>
+
+## Get Run Details
+
+`GET /api/run/details/`
+
+Returns detailed information about a submission including source code and test case results.
+
+<ParamField query="run_alias" type="string" required>
+  The run's GUID
+</ParamField>
+
+<ResponseField name="guid" type="string">
+  Run identifier
+</ResponseField>
+
+<ResponseField name="language" type="string">
+  Programming language
+</ResponseField>
+
+<ResponseField name="source" type="string">
+  Source code
+</ResponseField>
+
+<ResponseField name="compile_error" type="string" optional>
+  Compilation error message (if verdict is CE)
+</ResponseField>
+
+<ResponseField name="details" type="object" optional>
+  Detailed execution results
+  <ResponseField name="verdict" type="string">
+    Overall verdict
+  </ResponseField>
+  <ResponseField name="score" type="float">
+    Overall score
+  </ResponseField>
+  <ResponseField name="groups" type="array" optional>
+    Test case group results
+    <ResponseField name="group" type="string">
+      Group name
+    </ResponseField>
+    <ResponseField name="score" type="float">
+      Group score
+    </ResponseField>
+    <ResponseField name="cases" type="array">
+      Individual test case results
+      <ResponseField name="name" type="string">
+        Case name
+      </ResponseField>
+      <ResponseField name="verdict" type="string">
+        Case verdict
+      </ResponseField>
+      <ResponseField name="score" type="float">
+        Case score
+      </ResponseField>
+      <ResponseField name="meta" type="object">
+        Execution metadata (time, memory, etc.)
+      </ResponseField>
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="show_diff" type="enum">
+  Diff visibility: `none`, `examples`, `all`
+</ResponseField>
+
+<ResponseField name="cases" type="object">
+  Test case inputs/outputs (based on show_diff setting)
+</ResponseField>
+
+## Get Run Source
+
+`GET /api/run/source/`
+
+Returns the source code of a submission.
+
+<ParamField query="run_alias" type="string" required>
+  The run's GUID
+</ParamField>
+
+<ResponseField name="source" type="string">
+  Source code
+</ResponseField>
+
+<ResponseField name="compile_error" type="string" optional>
+  Compilation error if applicable
+</ResponseField>
+
+## Rejudge Run
+
+`POST /api/run/rejudge/`
+
+Rejudges a submission. Requires admin privileges.
+
+<ParamField body="run_alias" type="string" required>
+  The run's GUID
+</ParamField>
+
+<ParamField body="debug" type="boolean" optional>
+  Enable debug mode for rejudge
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if rejudge started
+</ResponseField>
+
+## Disqualify Run
+
+`POST /api/run/disqualify/`
+
+Disqualifies a submission. Requires admin privileges.
+
+<ParamField body="run_alias" type="string" optional>
+  Specific run to disqualify
+</ParamField>
+
+<ParamField body="contest_alias" type="string" optional>
+  Contest context (required if run_alias not provided)
+</ParamField>
+
+<ParamField body="problem_alias" type="string" optional>
+  Problem context (disqualifies all runs for user/problem/contest)
+</ParamField>
+
+<ParamField body="username" type="string" optional>
+  Username (disqualifies all runs for user in contest)
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+<ResponseField name="runs" type="array">
+  Array of disqualified run objects
+  <ResponseField name="guid" type="string">
+    Run GUID
+  </ResponseField>
+  <ResponseField name="username" type="string">
+    Username
+  </ResponseField>
+</ResponseField>
+
+## Requalify Run
+
+`POST /api/run/requalify/`
+
+Requalifies a previously disqualified submission.
+
+<ParamField body="run_alias" type="string" required>
+  The run's GUID
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Download Run Files
+
+`GET /api/run/download/`
+
+Downloads all output files for a run as a ZIP. Requires admin privileges.
+
+<ParamField query="run_alias" type="string" required>
+  The run's GUID
+</ParamField>
+
+<ParamField query="show_diff" type="boolean" optional>
+  Include diff information
+</ParamField>
+
+Returns a ZIP file containing all test case outputs.
+
+## Supported Languages
+
+Available programming languages:
+- `c` - C11 (gcc 9.3)
+- `cpp` - C++03 (gcc 9.3)
+- `cpp11` - C++11 (gcc 9.3)
+- `cpp17` - C++17 (gcc 9.3)
+- `cpp20` - C++20 (gcc 9.3)
+- `java` - Java 11
+- `py` - Python 2.7
+- `py3` - Python 3
+- `rb` - Ruby
+- `cs` - C#
+- `pas` - Pascal
+- `kp` - Karel (Pascal)
+- `kj` - Karel (Java)
+
+## Verdicts
+
+Possible submission verdicts:
+- `AC` - Accepted
+- `PA` - Partial Acceptance
+- `WA` - Wrong Answer
+- `TLE` - Time Limit Exceeded
+- `MLE` - Memory Limit Exceeded
+- `OLE` - Output Limit Exceeded
+- `RTE` - Runtime Error
+- `RFE` - Restricted Function Error
+- `CE` - Compilation Error
+- `JE` - Judge Error
+
+## Authentication
+
+Submitting runs requires authentication:
+
+```bash
+curl -H "Authorization: token YOUR_AUTH_TOKEN" \
+  -X POST \
+  -d '{"problem_alias":"sum","language":"cpp","source":"..."}' \
+  https://omegaup.com/api/run/create/
+```
+
+## Example: Submitting a Solution
+
+```bash
+curl -X POST https://omegaup.com/api/run/create/ \
+  -H "Authorization: token YOUR_TOKEN" \
+  -d '{
+    "problem_alias": "sum-two-numbers",
+    "language": "cpp",
+    "source": "#include <iostream>\nusing namespace std;\nint main() {\n  int a, b;\n  cin >> a >> b;\n  cout << a + b << endl;\n  return 0;\n}"
+  }'
+```
+
+## Example: Checking Run Status
+
+```bash
+curl "https://omegaup.com/api/run/status/?run_alias=abc123def456"
+```

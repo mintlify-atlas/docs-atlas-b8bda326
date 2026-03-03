@@ -1,122 +1,147 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "omegaUp",
+  "theme": "aspen",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#5588dd",
+    "light": "#8bb0d3",
+    "dark": "#466aaf"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/omegaup/omegaup"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/omegaup/omegaup",
+      "twitter": "https://twitter.com/omegaup"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Platform",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
+              "introduction",
               "quickstart",
-              "development"
+              "features"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "features/problems",
+              "features/contests",
+              "features/courses",
+              "features/arena",
+              "features/grading-system"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "User Guide",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "guides/creating-problems",
+              "guides/running-contests",
+              "guides/managing-courses",
+              "guides/badges-certificates"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Architecture",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "architecture/overview",
+              "architecture/components",
+              "architecture/grader",
+              "architecture/database"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Development",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Getting Started",
             "pages": [
-              "api-reference/introduction"
+              "development/setup",
+              "development/docker-environment",
+              "development/running-tests"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Contributing",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "development/contributing",
+              "development/pull-requests",
+              "development/issue-workflow",
+              "development/coding-guidelines"
+            ]
+          },
+          {
+            "group": "Frontend",
+            "pages": [
+              "development/frontend/overview",
+              "development/frontend/vue-components",
+              "development/frontend/typescript",
+              "development/frontend/storybook"
+            ]
+          },
+          {
+            "group": "Backend",
+            "pages": [
+              "development/backend/controllers",
+              "development/backend/dao",
+              "development/backend/business-logic"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/introduction",
+              "api/authentication",
+              "api/response-format"
+            ]
+          },
+          {
+            "group": "Core APIs",
+            "pages": [
+              "api/contest",
+              "api/course",
+              "api/problem",
+              "api/run",
+              "api/user"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "api/clarification",
+              "api/badge",
+              "api/certificate",
+              "api/group",
+              "api/scoreboard"
+            ]
+          },
+          {
+            "group": "Administration",
+            "pages": [
+              "api/admin",
+              "api/authorization",
+              "api/identity"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

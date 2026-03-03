@@ -1,0 +1,302 @@
+---
+title: Contest API
+description: Contest management and participation endpoints
+---
+
+The Contest API allows you to create, manage, and participate in programming contests on omegaUp.
+
+## List Contests
+
+`GET /api/contest/list/`
+
+Returns a paginated list of contests that the user can view.
+
+<ParamField path="page" type="integer" optional>
+  Page number for pagination (default: 1)
+</ParamField>
+
+<ParamField path="page_size" type="integer" optional>
+  Number of contests per page (default: 10, max: 100)
+</ParamField>
+
+<ParamField path="query" type="string" optional>
+  Search query to filter contests (max 250 characters)
+</ParamField>
+
+<ParamField path="admission_mode" type="enum" optional>
+  Filter by admission mode: `public`, `private`, `registration`
+</ParamField>
+
+<ParamField path="filter" type="enum" optional>
+  Contest filter: `all`, `recommended`, `signedup`
+</ParamField>
+
+<ParamField path="tab_name" type="enum" optional>
+  Time filter: `current`, `past`, `future`
+</ParamField>
+
+<ResponseField name="number_of_results" type="integer">
+  Total number of contests matching the criteria
+</ResponseField>
+
+<ResponseField name="results" type="array">
+  Array of contest objects
+  <ResponseField name="alias" type="string">
+    Contest alias (used in URLs)
+  </ResponseField>
+  <ResponseField name="title" type="string">
+    Contest title
+  </ResponseField>
+  <ResponseField name="description" type="string">
+    Contest description
+  </ResponseField>
+  <ResponseField name="start_time" type="timestamp">
+    Contest start time (UNIX timestamp)
+  </ResponseField>
+  <ResponseField name="finish_time" type="timestamp">
+    Contest end time (UNIX timestamp)
+  </ResponseField>
+  <ResponseField name="admission_mode" type="string">
+    `public`, `private`, or `registration`
+  </ResponseField>
+  <ResponseField name="window_length" type="integer" nullable>
+    Duration per user in minutes (USACO-style), or null
+  </ResponseField>
+</ResponseField>
+
+## Get Contest Details
+
+`GET /api/contest/{contest_alias}/`
+
+Returns detailed information about a specific contest.
+
+<ParamField path="contest_alias" type="string" required>
+  The unique alias of the contest
+</ParamField>
+
+<ResponseField name="title" type="string">
+  Contest title
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  Contest description
+</ResponseField>
+
+<ResponseField name="alias" type="string">
+  Contest alias
+</ResponseField>
+
+<ResponseField name="start_time" type="timestamp">
+  Contest start time (UNIX timestamp)
+</ResponseField>
+
+<ResponseField name="finish_time" type="timestamp">
+  Contest end time (UNIX timestamp)
+</ResponseField>
+
+<ResponseField name="scoreboard" type="integer">
+  Percentage (0-100) of time scoreboard is viewable by contestants
+</ResponseField>
+
+<ResponseField name="points_decay_factor" type="float">
+  Score decay factor (0-1). Score = (1 - decay) + decay * TT² / (10 * PT² + TT²)
+</ResponseField>
+
+<ResponseField name="submissions_gap" type="integer">
+  Seconds contestants must wait between submissions
+</ResponseField>
+
+<ResponseField name="feedback" type="enum">
+  Feedback level: `yes`, `no`, `partial`
+</ResponseField>
+
+<ResponseField name="problems" type="array">
+  List of problems in the contest
+  <ResponseField name="alias" type="string">
+    Problem alias
+  </ResponseField>
+  <ResponseField name="title" type="string">
+    Problem title
+  </ResponseField>
+  <ResponseField name="points" type="float">
+    Maximum points for this problem
+  </ResponseField>
+</ResponseField>
+
+## Create Contest
+
+`POST /api/contest/create/`
+
+Creates a new contest. Requires authentication.
+
+<ParamField body="title" type="string" required>
+  Contest title
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  Short description of the contest
+</ParamField>
+
+<ParamField body="alias" type="string" required>
+  Contest alias (used in URLs)
+</ParamField>
+
+<ParamField body="start_time" type="timestamp" required>
+  Contest start time (UNIX timestamp)
+</ParamField>
+
+<ParamField body="finish_time" type="timestamp" required>
+  Contest end time (UNIX timestamp)
+</ParamField>
+
+<ParamField body="admission_mode" type="enum" required>
+  `public`, `private`, or `registration`
+</ParamField>
+
+<ParamField body="scoreboard" type="integer" required>
+  Scoreboard visibility percentage (0-100)
+</ParamField>
+
+<ParamField body="points_decay_factor" type="float" optional>
+  Score decay factor (0-1, default: 0)
+</ParamField>
+
+<ParamField body="submissions_gap" type="integer" optional>
+  Minimum seconds between submissions
+</ParamField>
+
+<ParamField body="feedback" type="enum" optional>
+  Feedback level: `yes`, `no`, `partial`
+</ParamField>
+
+<ParamField body="window_length" type="integer" optional>
+  Contest duration per user in minutes (USACO-style)
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Add Problem to Contest
+
+`POST /api/contest/{contest_alias}/addProblem/`
+
+Adds a problem to a contest. Requires contest admin privileges.
+
+<ParamField path="contest_alias" type="string" required>
+  The contest alias
+</ParamField>
+
+<ParamField body="problem_alias" type="string" required>
+  Alias of the problem to add
+</ParamField>
+
+<ParamField body="points" type="integer" required>
+  Points for solving this problem (typically 100)
+</ParamField>
+
+<ParamField body="order_in_contest" type="integer" optional>
+  Problem order in the contest
+</ParamField>
+
+<ResponseField name="status" type="string">
+  Returns `ok` if successful
+</ResponseField>
+
+## Get Contest Scoreboard
+
+`GET /api/contest/{contest_alias}/scoreboard/`
+
+Returns the contest scoreboard. Frozen for contestants based on scoreboard settings.
+
+<ParamField path="contest_alias" type="string" required>
+  The contest alias
+</ParamField>
+
+<ResponseField name="ranking" type="array">
+  Array of contestant rankings
+  <ResponseField name="username" type="string">
+    Contestant's username
+  </ResponseField>
+  <ResponseField name="total" type="object">
+    Total score and penalty
+    <ResponseField name="points" type="integer">
+      Total points
+    </ResponseField>
+    <ResponseField name="penalty" type="integer">
+      Total penalty
+    </ResponseField>
+  </ResponseField>
+  <ResponseField name="problems" type="object">
+    Per-problem scores indexed by problem alias
+    <ResponseField name="points" type="integer">
+      Points for this problem
+    </ResponseField>
+    <ResponseField name="penalty" type="integer">
+      Penalty for this problem
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+## Get Clarifications
+
+`GET /api/contest/{contest_alias}/clarifications/`
+
+Returns clarifications for a contest.
+
+<ParamField path="contest_alias" type="string" required>
+  The contest alias
+</ParamField>
+
+<ParamField query="offset" type="integer" optional>
+  Starting position for pagination
+</ParamField>
+
+<ParamField query="rowcount" type="integer" optional>
+  Number of clarifications to return
+</ParamField>
+
+<ResponseField name="clarification_id" type="integer">
+  Unique clarification ID
+</ResponseField>
+
+<ResponseField name="problem_alias" type="string">
+  Associated problem alias
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Clarification text
+</ResponseField>
+
+<ResponseField name="answer" type="string" nullable>
+  Answer to the clarification
+</ResponseField>
+
+<ResponseField name="time" type="timestamp">
+  Last update timestamp
+</ResponseField>
+
+<ResponseField name="public" type="boolean">
+  Whether the clarification is public
+</ResponseField>
+
+## Authentication
+
+Most contest endpoints require authentication. Include your auth token in the request:
+
+```bash
+curl -H "Authorization: token YOUR_AUTH_TOKEN" \
+  https://omegaup.com/api/contest/list/
+```
+
+## Example: Listing Contests
+
+```bash
+curl "https://omegaup.com/api/contest/list/?page=1&page_size=10"
+```
+
+## Example: Getting Contest Details
+
+```bash
+curl "https://omegaup.com/api/contest/my-contest/"
+```

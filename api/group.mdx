@@ -1,0 +1,304 @@
+---
+title: Group API
+description: API endpoints for managing groups and group memberships
+---
+
+## Overview
+
+The Group API provides endpoints for creating and managing groups, adding/removing members, and managing group scoreboards.
+
+## Create Group
+
+Creates a new group.
+
+**Endpoint:** `POST /api/group/create`
+
+**Authentication:** Required - User must be over 13 years old
+
+### Parameters
+
+<ParamField path="alias" type="string" required>
+  Unique alias for the group
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Display name for the group
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  Description of the group
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if successful
+</ResponseField>
+
+## Update Group
+
+Updates an existing group's information.
+
+**Endpoint:** `POST /api/group/update`
+
+**Authentication:** Required - Must be group owner
+
+### Parameters
+
+<ParamField path="alias" type="string" required>
+  Alias of the group to update
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  New display name
+</ParamField>
+
+<ParamField path="description" type="string" required>
+  New description
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if successful
+</ResponseField>
+
+## Add User to Group
+
+Adds a user to a group.
+
+**Endpoint:** `POST /api/group/addUser`
+
+**Authentication:** Required - Must be group owner and over 13 years old
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group (supports namespaced aliases)
+</ParamField>
+
+<ParamField path="usernameOrEmail" type="string" required>
+  Username or email of the user to add
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if successful
+</ResponseField>
+
+## Remove User from Group
+
+Removes a user from a group.
+
+**Endpoint:** `POST /api/group/removeUser`
+
+**Authentication:** Required - Must be group owner
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group (supports namespaced aliases)
+</ParamField>
+
+<ParamField path="usernameOrEmail" type="string" required>
+  Username or email of the user to remove
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if successful
+</ResponseField>
+
+## List My Groups
+
+Returns all groups administered by the current user.
+
+**Endpoint:** `GET /api/group/myList`
+
+**Authentication:** Required
+
+### Response
+
+<ResponseField name="groups" type="array">
+  Array of group objects
+  
+  <ResponseField name="alias" type="string">
+    Group alias
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Group name
+  </ResponseField>
+  
+  <ResponseField name="description" type="string|null">
+    Group description
+  </ResponseField>
+  
+  <ResponseField name="create_time" type="timestamp">
+    When the group was created
+  </ResponseField>
+</ResponseField>
+
+## Search Groups
+
+Searches for groups by name or alias.
+
+**Endpoint:** `GET /api/group/list`
+
+**Authentication:** Required
+
+### Parameters
+
+<ParamField path="query" type="string" required>
+  Search query (partial name or alias)
+</ParamField>
+
+### Response
+
+Returns an array of objects with `label` and `value` fields for typeahead functionality.
+
+## Get Group Details
+
+Retrieves details of a group including its scoreboards.
+
+**Endpoint:** `GET /api/group/details`
+
+**Authentication:** Required - Must be group owner
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group (supports namespaced aliases)
+</ParamField>
+
+### Response
+
+<ResponseField name="group" type="object">
+  Group information
+  
+  <ResponseField name="alias" type="string">
+    Group alias
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Group name
+  </ResponseField>
+  
+  <ResponseField name="description" type="string|null">
+    Group description
+  </ResponseField>
+  
+  <ResponseField name="create_time" type="int">
+    Creation timestamp
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="scoreboards" type="array">
+  Array of scoreboard objects
+  
+  <ResponseField name="alias" type="string">
+    Scoreboard alias
+  </ResponseField>
+  
+  <ResponseField name="name" type="string">
+    Scoreboard name
+  </ResponseField>
+  
+  <ResponseField name="description" type="string|null">
+    Scoreboard description
+  </ResponseField>
+  
+  <ResponseField name="create_time" type="string">
+    Creation time
+  </ResponseField>
+</ResponseField>
+
+## Get Group Members
+
+Retrieves all members (identities) of a group.
+
+**Endpoint:** `GET /api/group/members`
+
+**Authentication:** Required - Must be group owner
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group (supports namespaced aliases)
+</ParamField>
+
+### Response
+
+<ResponseField name="identities" type="array">
+  Array of identity objects
+  
+  <ResponseField name="username" type="string">
+    Username
+  </ResponseField>
+  
+  <ResponseField name="name" type="string|null">
+    Full name
+  </ResponseField>
+  
+  <ResponseField name="country" type="string|null">
+    Country code
+  </ResponseField>
+  
+  <ResponseField name="country_id" type="string|null">
+    Country ID
+  </ResponseField>
+  
+  <ResponseField name="state" type="string|null">
+    State
+  </ResponseField>
+  
+  <ResponseField name="state_id" type="string|null">
+    State ID
+  </ResponseField>
+  
+  <ResponseField name="school" type="string|null">
+    School name
+  </ResponseField>
+  
+  <ResponseField name="school_id" type="int|null">
+    School ID
+  </ResponseField>
+  
+  <ResponseField name="gender" type="string|null">
+    Gender
+  </ResponseField>
+</ResponseField>
+
+## Create Group Scoreboard
+
+Creates a scoreboard for a group.
+
+**Endpoint:** `POST /api/group/createScoreboard`
+
+**Authentication:** Required - Must be group owner and over 13 years old
+
+### Parameters
+
+<ParamField path="group_alias" type="string" required>
+  Alias of the group (supports namespaced aliases)
+</ParamField>
+
+<ParamField path="alias" type="string" required>
+  Alias for the new scoreboard
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Name of the scoreboard
+</ParamField>
+
+<ParamField path="description" type="string">
+  Description of the scoreboard (optional)
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string">
+  Returns "ok" if successful
+</ResponseField>

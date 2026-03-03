@@ -1,0 +1,587 @@
+---
+title: Badges and Certificates
+description: Understand and implement the badge and certificate system in omegaUp
+---
+
+## Overview
+
+omegaUp features a badge system to recognize user achievements and milestones. Badges are automatically awarded when users meet specific criteria, providing motivation and recognizing accomplishments.
+
+## How Badges Work
+
+<Info>
+  Badges are automatically assigned by omegaUp based on user activity and achievements. Users cannot manually claim badges.
+</Info>
+
+### Badge Assignment Process
+
+<Steps>
+  <Step title="User completes achievement">
+    A user solves problems, participates in contests, or reaches milestones.
+  </Step>
+  
+  <Step title="Cron job runs">
+    omegaUp's `assign_badges.py` script runs periodically to check badge criteria.
+  </Step>
+  
+  <Step title="Badge awarded">
+    If criteria are met, the badge is automatically awarded to the user.
+  </Step>
+  
+  <Step title="User notification">
+    Users receive notifications about newly earned badges.
+  </Step>
+</Steps>
+
+## Types of Badges
+
+<CardGroup cols={2}>
+  <Card title="Problem Solving" icon="code">
+    **Examples:**
+    - First AC (Accepted solution)
+    - 100 solved problems
+    - 500 solved problems
+    - Problem of the Month solver
+  </Card>
+  
+  <Card title="Contest Participation" icon="trophy">
+    **Examples:**
+    - Contest Administrator
+    - Virtual Contest Administrator
+    - Contest participant
+    - Top 10 finisher
+  </Card>
+  
+  <Card title="Platform Contribution" icon="users">
+    **Examples:**
+    - Problem creator
+    - Coder of the Month
+    - Community contributor
+    - Tutorial author
+  </Card>
+  
+  <Card title="Milestones" icon="star">
+    **Examples:**
+    - Legacy user (early adopter)
+    - 1-year anniversary
+    - Verified account
+  </Card>
+</CardGroup>
+
+## Badge Components
+
+Each badge consists of:
+
+<AccordionGroup>
+  <Accordion title="Alias" icon="fingerprint">
+    **Unique identifier** for the badge
+    
+    **Requirements:**
+    - Must be unique across all badges
+    - Maximum 32 characters
+    - URL-friendly format (no spaces or special characters)
+    
+    **Example:** `100solvedProblems`, `coderOfTheMonth`
+  </Accordion>
+
+  <Accordion title="Icon" icon="image">
+    **Visual representation** of the badge
+    
+    **Format:** SVG file named `icon.svg`
+    
+    **Location:** `/frontend/badges/{alias}/icon.svg`
+    
+    <Tip>
+      Use SVG format for scalable, crisp icons at any size.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Query" icon="database">
+    **SQL query** that determines who receives the badge
+    
+    **File:** `query.sql` in the badge folder
+    
+    **Purpose:** Selects `user_id`s of users who meet badge criteria
+    
+    **Example:**
+    ```sql
+    SELECT
+      user_id
+    FROM
+      Submissions
+    WHERE
+      verdict = 'AC'
+    GROUP BY
+      user_id
+    HAVING
+      COUNT(DISTINCT problem_id) >= 100;
+    ```
+  </Accordion>
+
+  <Accordion title="Localizations" icon="language">
+    **Translations** for badge name and description
+    
+    **File:** `localizations.json`
+    
+    **Required languages:**
+    - Spanish (es)
+    - English (en)
+    - Portuguese (pt)
+    
+    **Format:**
+    ```json
+    {
+      "es": {
+        "name": "100 Problemas Resueltos",
+        "description": "Has resuelto 100 problemas correctamente"
+      },
+      "en": {
+        "name": "100 Solved Problems",
+        "description": "You have solved 100 problems correctly"
+      },
+      "pt": {
+        "name": "100 Problemas Resolvidos",
+        "description": "Você resolveu 100 problemas corretamente"
+      }
+    }
+    ```
+    
+    <Warning>
+      Badge names must not exceed **50 characters**.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Test" icon="vial">
+    **Unit test** to verify badge criteria
+    
+    **File:** `test.json`
+    
+    **Purpose:** Ensures the badge is awarded correctly
+  </Accordion>
+</AccordionGroup>
+
+## Implementing a New Badge
+
+<Note>
+  This section is for developers contributing to omegaUp. Regular users cannot create custom badges.
+</Note>
+
+<Steps>
+  <Step title="Create badge alias">
+    Choose a unique, descriptive alias (max 32 characters).
+    
+    **Good examples:**
+    - `coderOfTheMonth`
+    - `100solvedProblems`
+    - `contestAdministrator`
+    
+    **Bad examples:**
+    - `badge123` (not descriptive)
+    - `this-is-a-very-long-alias-that-exceeds-limit` (too long)
+  </Step>
+
+  <Step title="Create badge folder">
+    Create a folder in `/frontend/badges/` with your badge alias:
+    
+    ```bash
+    mkdir frontend/badges/myBadgeAlias
+    ```
+  </Step>
+
+  <Step title="Add custom icon (optional)">
+    If your badge needs a custom icon:
+    
+    ```bash
+    # Add your SVG icon
+    cp icon.svg frontend/badges/myBadgeAlias/icon.svg
+    ```
+    
+    If no icon is provided, a default icon is used.
+  </Step>
+
+  <Step title="Create SQL query">
+    Write `query.sql` to select users who should receive the badge:
+    
+    ```sql
+    -- Example: Users who solved at least 50 problems
+    SELECT
+      DISTINCT u.user_id
+    FROM
+      Users u
+    INNER JOIN Submissions s ON s.user_id = u.user_id
+    WHERE
+      s.verdict = 'AC'
+    GROUP BY
+      u.user_id
+    HAVING
+      COUNT(DISTINCT s.problem_id) >= 50;
+    ```
+    
+    <Tip>
+      Study the [omegaUp database schema](https://github.com/omegaup/omegaup/blob/master/frontend/database/schema.sql) to write effective queries.
+    </Tip>
+  </Step>
+
+  <Step title="Add localizations">
+    Create `localizations.json` with translations:
+    
+    ```json
+    {
+      "es": {
+        "name": "Badge Name in Spanish",
+        "description": "Badge description in Spanish"
+      },
+      "en": {
+        "name": "Badge Name in English",
+        "description": "Badge description in English"
+      },
+      "pt": {
+        "name": "Badge Name in Portuguese",
+        "description": "Badge description in Portuguese"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Load translations">
+    Run the lint script to load translations into omegaUp:
+    
+    ```bash
+    ./stuff/lint.sh
+    ```
+  </Step>
+
+  <Step title="Create tests">
+    Create `test.json` to define how the badge should be tested.
+    
+    <Tabs>
+      <Tab title="API Call Tests">
+        Use `"testType": "apicall"` for tests using controller APIs:
+        
+        ```json
+        {
+          "testType": "apicall",
+          "actions": [
+            {
+              "type": "apicalls",
+              "user": "test_user",
+              "password": "test_password",
+              "calls": [
+                {
+                  "endpoint": "problem/create",
+                  "params": {}
+                }
+              ]
+            },
+            {
+              "type": "scripts",
+              "script": "assign_badges.py"
+            }
+          ],
+          "expectedResults": ["test_user"]
+        }
+        ```
+        
+        **Action types:**
+        - `changeTime`: Modify system date
+        - `apicalls`: Call omegaUp API endpoints
+        - `scripts`: Run cron scripts
+        
+        See example: [coderOfTheMonth test](https://github.com/omegaup/omegaup/blob/master/frontend/badges/coderOfTheMonth/test.json)
+      </Tab>
+      
+      <Tab title="PHPUnit Tests">
+        Use `"testType": "phpunit"` for custom unit tests:
+        
+        ```json
+        {
+          "testType": "phpunit"
+        }
+        ```
+        
+        Create a test file: `frontend/tests/badges/Badge_{alias}Test.php`
+        
+        ```php
+        <?php
+        class Badge_myBadgeAliasTest extends OmegaupTestCase {
+            public function testBadgeIsAssigned() {
+                // Test implementation
+            }
+        }
+        ```
+        
+        **Best for:** Complex scenarios requiring custom logic
+        
+        See example: [100solvedProblems test](https://github.com/omegaup/omegaup/blob/master/frontend/tests/badges/Badge_100solvedProblemsTest.php)
+      </Tab>
+    </Tabs>
+    
+    <Tip>
+      Use **apicall** tests for simple scenarios with API calls. Use **phpunit** for complex tests with many identical API calls.
+    </Tip>
+  </Step>
+
+  <Step title="Run tests">
+    Verify your badge implementation:
+    
+    ```bash
+    # Run all badge tests
+    ./vendor/bin/phpunit \
+      --bootstrap frontend/tests/bootstrap.php \
+      --configuration frontend/tests/phpunit.xml \
+      frontend/tests/badges/ --debug
+    
+    # Or run all tests
+    ./stuff/runtests.sh
+    ```
+  </Step>
+
+  <Step title="Submit pull request">
+    Once tests pass, submit a PR to add your badge to omegaUp!
+    
+    **Include in your PR:**
+    - Badge folder with all files
+    - Clear description of badge criteria
+    - Test results showing the badge works
+    
+    **Reference PRs:**
+    - [Contest Administrator](https://github.com/omegaup/omegaup/pull/2602/files)
+    - [Virtual Contest Administrator](https://github.com/omegaup/omegaup/pull/2603/files)
+  </Step>
+</Steps>
+
+## Badge Folder Structure
+
+A complete badge implementation:
+
+```
+frontend/badges/{alias}/
+├── icon.svg              # Badge icon (optional)
+├── query.sql            # SQL query for badge criteria
+├── localizations.json   # Translations (es, en, pt)
+└── test.json           # Unit test configuration
+```
+
+## Certificates
+
+<Info>
+  Certificate functionality is being developed. Certificates will allow contest and course organizers to award official certificates to participants.
+</Info>
+
+### Planned Certificate Features
+
+<CardGroup cols={2}>
+  <Card title="Automatic Generation" icon="file-certificate">
+    Generate certificates for contest/course participants automatically
+  </Card>
+  
+  <Card title="QR Verification" icon="qrcode">
+    Include QR codes to verify certificate authenticity
+  </Card>
+  
+  <Card title="Bulk Creation" icon="layer-group">
+    Create certificates for multiple students at once
+  </Card>
+  
+  <Card title="Customization" icon="palette">
+    Customize certificate design and content
+  </Card>
+</CardGroup>
+
+### Current Status
+
+Certificates are planned for:
+- Contest completions
+- Course graduations
+- Achievement milestones
+- Olympiad participation
+
+<Note>
+  For certificate implementation status and updates, check the [omegaUp GitHub repository](https://github.com/omegaup/omegaup).
+</Note>
+
+## Badge Examples
+
+### Example: Problem Solver Badge
+
+**Alias:** `problemSolver`
+
+**Criteria:** Solved at least one problem
+
+**query.sql:**
+```sql
+SELECT DISTINCT
+  user_id
+FROM
+  Submissions
+WHERE
+  verdict = 'AC';
+```
+
+### Example: Coder of the Month
+
+**Alias:** `coderOfTheMonth`
+
+**Criteria:** Achieved Coder of the Month status
+
+**query.sql:**
+```sql
+SELECT
+  user_id
+FROM
+  Coder_Of_The_Month;
+```
+
+### Example: Contest Administrator
+
+**Alias:** `contestAdministrator`
+
+**Criteria:** Created and administered a contest
+
+**query.sql:**
+```sql
+SELECT DISTINCT
+  owner_id as user_id
+FROM
+  Contests
+WHERE
+  finish_time < NOW();
+```
+
+## Testing Badges Locally
+
+To test badge assignment in development:
+
+<Steps>
+  <Step title="Set up development environment">
+    Ensure your local omegaUp instance is running.
+  </Step>
+  
+  <Step title="Create test data">
+    Use the omegaUp API to create users, problems, and submissions that meet badge criteria.
+  </Step>
+  
+  <Step title="Run badge assignment script">
+    ```bash
+    # Manually trigger badge assignment
+    python3 stuff/cron/assign_badges.py
+    ```
+  </Step>
+  
+  <Step title="Verify badges">
+    Check that badges appear in user profiles for those meeting criteria.
+  </Step>
+</Steps>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="SQL Query Optimization" icon="gauge-high">
+    **Write efficient queries:**
+    - Use appropriate indexes
+    - Avoid unnecessary joins
+    - Test query performance on large datasets
+    - Use `EXPLAIN` to analyze query plans
+    
+    **Consider:**
+    - Badge queries run periodically on all users
+    - Slow queries impact server performance
+    - Optimize for scalability
+  </Accordion>
+
+  <Accordion title="Badge Criteria" icon="list-check">
+    **Define clear criteria:**
+    - Achievable but meaningful
+    - Objective and measurable
+    - Aligned with platform goals
+    - Not too easy or too hard
+    
+    **Examples of good criteria:**
+    - Solve 100 problems (clear number)
+    - Win a contest (objective outcome)
+    - Contribute a tutorial (measurable action)
+  </Accordion>
+
+  <Accordion title="Localization Quality" icon="language">
+    **Provide quality translations:**
+    - Use native speakers when possible
+    - Maintain consistent tone across languages
+    - Keep names concise (< 50 characters)
+    - Make descriptions clear and motivating
+  </Accordion>
+
+  <Accordion title="Testing Thoroughly" icon="vial">
+    **Comprehensive tests ensure:**
+    - Badge awarded to correct users
+    - Badge not awarded incorrectly
+    - Edge cases handled properly
+    - Performance is acceptable
+    
+    **Test scenarios:**
+    - User just meeting criteria
+    - User exceeding criteria
+    - User almost meeting criteria
+    - Multiple users simultaneously
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+### Badge Not Appearing
+
+**Check:**
+- SQL query returns correct user IDs
+- Translations loaded with `./stuff/lint.sh`
+- Badge assignment script ran (`assign_badges.py`)
+- No errors in query execution
+
+### Test Failures
+
+**Debug:**
+- Review test output for specific errors
+- Verify test data meets badge criteria
+- Check SQL query syntax
+- Ensure all files present in badge folder
+
+### Translation Issues
+
+**Verify:**
+- `localizations.json` has valid JSON syntax
+- All three languages (es, en, pt) included
+- Names under 50 characters
+- `./stuff/lint.sh` ran successfully
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card title="Database Schema" icon="database" href="https://github.com/omegaup/omegaup/blob/master/frontend/database/schema.sql">
+    View omegaUp's database structure
+  </Card>
+  
+  <Card title="Existing Badges" icon="folder" href="https://github.com/omegaup/omegaup/tree/master/frontend/badges">
+    Browse implemented badges for examples
+  </Card>
+  
+  <Card title="Pull Request Examples" icon="code-pull-request" href="https://github.com/omegaup/omegaup/pulls?q=badge">
+    See badge implementation PRs
+  </Card>
+  <Card title="API Controllers" icon="server" href="https://github.com/omegaup/omegaup/tree/master/frontend/server/src/Controllers">
+    Learn about available API endpoints
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Create Problems" icon="code" href="/guides/creating-problems">
+    Build problems to help users earn badges
+  </Card>
+  
+  <Card title="Run Contests" icon="trophy" href="/guides/running-contests">
+    Host contests that award achievements
+  </Card>
+  
+  <Card title="Manage Courses" icon="graduation-cap" href="/guides/managing-courses">
+    Create courses with completion badges
+  </Card>
+</CardGroup>

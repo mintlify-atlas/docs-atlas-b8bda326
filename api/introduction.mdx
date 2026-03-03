@@ -1,0 +1,28 @@
+---
+title: API Introduction
+description: Overview of the omegaUp REST API and base URL
+---
+
+The omegaUp platform is built on a [REST](https://en.wikipedia.org/wiki/Representational_state_transfer) API that can be accessed directly. All endpoints use standard HTTP methods (`GET` or `POST`) and respond with appropriate HTTP status codes along with a JSON-formatted response.
+
+## Base URL
+
+All API endpoints are prefixed with:
+
+```
+https://omegaup.com/api/
+```
+
+In this documentation, only the part of the URL **after** this prefix is shown. For example, the endpoint for retrieving the server time is referred to as `time/get`, but the complete URL is:
+
+```
+https://omegaup.com/api/time/get/
+```
+
+## HTTPS Only
+
+To ensure user privacy and prevent cheating, **only HTTPS** connections are allowed. Any requests made over plain HTTP will fail, returning an `HTTP 301 Permanent Redirect`.
+
+## Public vs Protected Endpoints
+
+Some API endpoints are public and require no authentication—you can even access them by visiting the URL in a browser. However, certain endpoints are protected and require the user to be logged in.

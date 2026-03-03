@@ -1,0 +1,150 @@
+---
+title: Running Tests Locally
+description: Set up and run JavaScript/TypeScript tests outside of Docker
+---
+
+## Overview
+
+You can run JavaScript/TypeScript tests locally outside of Docker. This requires properly initializing all third-party dependencies.
+
+## Prerequisites
+
+<CardGroup cols={2}>
+  <Card title="Node.js" icon="node">
+    Version 16 or higher recommended
+  </Card>
+  <Card title="Yarn" icon="yarn">
+    Yarn package manager
+  </Card>
+</CardGroup>
+
+## Setup Steps
+
+<Steps>
+  <Step title="Initialize Git Submodules">
+    The project uses git submodules for third-party JavaScript libraries in `frontend/www/third_party/js/`:
+    
+    ```bash
+    git submodule update --init --recursive
+    ```
+    
+    This downloads required dependencies:
+    - `pagedown` - Markdown editor library
+    - `iso-3166-2.js` - Country/region codes
+    - `csv.js` - CSV parsing library
+    - `mathjax` - Math rendering library
+  </Step>
+
+  <Step title="Install Node Dependencies">
+    <CodeGroup>
+    ```bash yarn
+    yarn install
+    ```
+    
+    ```bash npm
+    npm install
+    ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Run Tests">
+    <CodeGroup>
+    ```bash yarn
+    yarn test
+    ```
+    
+    ```bash npm
+    npm test
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+## Quick Start (Fresh Clone)
+
+For a fresh repository clone, use this single command sequence:
+
+<CodeGroup>
+```bash yarn
+git clone --recurse-submodules https://github.com/YOURUSERNAME/omegaup
+cd omegaup
+yarn install
+yarn test
+```
+
+```bash npm
+git clone --recurse-submodules https://github.com/YOURUSERNAME/omegaup
+cd omegaup
+npm install
+npm test
+```
+</CodeGroup>
+
+## Common Issues
+
+### Missing Third-Party Modules
+
+If you encounter errors like:
+
+```
+Cannot find module '@/third_party/js/pagedown/Markdown.Converter.js'
+```
+
+This means git submodules were not initialized. Run:
+
+```bash
+git submodule update --init --recursive
+```
+
+<Note>
+Always initialize submodules before installing dependencies and running tests.
+</Note>
+
+### Submodules Not Found
+
+If you cloned without the `--recurse-submodules` flag, the third-party libraries won't be present. Initialize them:
+
+```bash
+git submodule update --init --recursive
+```
+
+### Node Version Issues
+
+Ensure you're using Node.js version 16 or higher:
+
+```bash
+node --version
+```
+
+If you need to upgrade, consider using [nvm](https://github.com/nvm-sh/nvm) (Node Version Manager).
+
+## Running Tests in Docker
+
+Tests also run automatically inside the Docker environment. If you prefer running tests in Docker:
+
+<Steps>
+  <Step title="Access the container">
+    ```bash
+    docker exec -it omegaup-frontend-1 /bin/bash
+    ```
+  </Step>
+
+  <Step title="Run tests inside container">
+    ```bash
+    yarn test
+    ```
+  </Step>
+</Steps>
+
+## What Gets Tested
+
+The test suite covers:
+
+- Frontend TypeScript/JavaScript components
+- Vue.js components and logic
+- API integration tests
+- Utility functions and helpers
+
+<Tip>
+Run tests frequently while developing to catch issues early.
+</Tip>

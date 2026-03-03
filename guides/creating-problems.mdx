@@ -1,0 +1,311 @@
+---
+title: Creating Problems for omegaUp
+description: Learn how to create and upload problems to the omegaUp platform
+---
+
+## Overview
+
+There are two ways to create problems for omegaUp: using the visual Problem Creator tool for quick problem development, or manually generating a `.zip` file for advanced use cases like Karel problems.
+
+## Method 1: Problem Creator (CDP)
+
+The [Problem Creator (CDP)](https://omegaup.com/problem/creator) is a visual tool that allows you to create problems in an intuitive and user-friendly way.
+
+### When to Use CDP
+
+<Check>
+  **Best for:**
+  - Standard programming problems in C, C++, Java, Python, etc.
+  - Quick problem creation with a visual interface
+  - Beginners and educators new to omegaUp
+</Check>
+
+<Warning>
+  **Limitations:**
+  - Does not support Karel problems
+  - Limited customization for advanced validation
+</Warning>
+
+### Getting Started with CDP
+
+<Steps>
+  <Step title="Access the Problem Creator">
+    Navigate to the [Problem Creator](https://omegaup.com/problem/creator) on omegaUp.
+  </Step>
+
+  <Step title="Define problem details">
+    Enter your problem's title, description, and constraints using the visual editor.
+  </Step>
+
+  <Step title="Add test cases">
+    Create input/output pairs that will be used to validate submissions.
+  </Step>
+
+  <Step title="Configure settings">
+    Set time limits, memory limits, and choose your validator type.
+  </Step>
+
+  <Step title="Publish">
+    Review your problem and publish it to omegaUp.
+  </Step>
+</Steps>
+
+### Video Tutorial
+
+<Tip>
+  Watch [this tutorial](https://www.youtube.com/watch?v=cUUP9DqQ1Vg) to learn how to use the Problem Creator step by step.
+</Tip>
+
+## Method 2: Manual ZIP File Creation
+
+For advanced users who need more control or want to create Karel problems, you can manually generate a `.zip` file.
+
+### When to Use Manual Creation
+
+<Check>
+  **Best for:**
+  - Karel problems
+  - Custom validators
+  - Interactive problems
+  - Advanced problem configurations
+</Check>
+
+### ZIP File Structure
+
+Your problem `.zip` must contain the following structure:
+
+```
+problem.zip
+├── cases/
+│   ├── 1.in
+│   ├── 1.out
+│   ├── 2.in
+│   └── 2.out
+├── statements/
+│   └── es.markdown
+├── solutions/
+│   └── es.markdown
+└── validator.cpp (optional)
+```
+
+### Required Components
+
+<AccordionGroup>
+  <Accordion title="cases/ folder" icon="folder">
+    Contains all test cases with `.in` and `.out` extensions.
+    
+    **Important rules:**
+    - Filenames must match (e.g., `1.in` with `1.out`)
+    - Avoid `.` in names unless grouping cases
+    - Recommended total size: under 100MB
+    
+    **Grouped cases example:**
+    ```
+    group1.case1.in
+    group1.case1.out
+    group1.case2.in
+    group1.case2.out
+    ```
+    
+    <Note>
+      With grouped cases, contestants must solve all cases in a group to earn points.
+    </Note>
+  </Accordion>
+
+  <Accordion title="statements/ folder" icon="file-lines">
+    Must contain the problem statement in Markdown format (`es.markdown`).
+    
+    **Features:**
+    - Full LaTeX support for mathematical formulas
+    - Preview at [https://omegaup.com/redaccion.php](https://omegaup.com/redaccion.php)
+    - Wrap variables like `$n$`, `$x$` to highlight them
+    - Use `$x_i$` for subscripts
+    
+    **Supported languages:**
+    - `es.markdown` (required)
+    - `en.markdown` (optional)
+    - `pt.markdown` (optional)
+  </Accordion>
+
+  <Accordion title="solutions/ folder" icon="lightbulb">
+    Contains the problem solution in Markdown format.
+    
+    Same structure as statements:
+    - `es.markdown` (required)
+    - `en.markdown` (optional)
+    - `pt.markdown` (optional)
+  </Accordion>
+</AccordionGroup>
+
+### Optional Components
+
+<AccordionGroup>
+  <Accordion title="Custom validator" icon="code">
+    Create a file named `validator.$lang$` where `$lang$` is one of: `c`, `cpp`, `java`, `p` (Pascal), or `py`.
+    
+    **Validator example (C++):**
+    
+    ```cpp
+    #include <iostream>
+    #include <fstream>
+
+    int main() {
+      // Read the original input
+      int64_t a, b;
+      {
+        std::ifstream input("data.in", std::ifstream::in);
+        input >> a >> b;
+      }
+      
+      // Read expected output
+      int64_t expected_sum;
+      {
+        std::ifstream output("data.out", std::ifstream::in);
+        output >> expected_sum;
+      }
+
+      // Read contestant's output
+      int64_t contestant_sum;
+      if (!(std::cin >> contestant_sum)) {
+        std::cerr << "Error reading contestant output\n";
+        std::cout << 0.0 << '\n';
+        return 0;
+      }
+
+      // Validate
+      if (expected_sum != contestant_sum && expected_sum != a + b) {
+        std::cerr << "Incorrect output\n";
+        std::cout << 0.0 << '\n';
+        return 0;
+      }
+
+      // Correct answer
+      std::cout << 1.0 << '\n';
+      return 0;
+    }
+    ```
+    
+    <Note>
+      The validator must output a float between 0.0 and 1.0 representing the score.
+    </Note>
+  </Accordion>
+
+  <Accordion title="testplan file" icon="list-check">
+    By default, each case has equal value. To assign custom points, create a `testplan` file:
+    
+    ```
+    caso1 5
+    grupo2.caso1 10
+    grupo2.caso2 0
+    ```
+    
+    <Tip>
+      For groups, assign full score to the first case and 0 to others in that group.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="interactive/ folder" icon="arrows-left-right">
+    For interactive problems, use [libinteractive](https://omegaup.com/libinteractive/).
+    
+    Reference: [Cave from IOI 2013](https://omegaup.com/resources/cave.zip)
+  </Accordion>
+</AccordionGroup>
+
+### Adding Images
+
+Place image files in the `statements/` folder and reference them in markdown:
+
+```markdown
+![Alt text](image.jpg)
+```
+
+**Supported formats:** jpg, gif, png
+
+<Warning>
+  Keep image width under 650 pixels. Images cannot be rescaled in markdown.
+</Warning>
+
+### Configuration Options
+
+When uploading your problem, you can configure:
+
+| Setting | Options |
+|---------|--------|
+| **Validator** | Token by token, case-insensitive, numeric with tolerance, custom validator |
+| **Languages** | C/C++/Java/Python, Karel, Output only, No submissions |
+| **Time limit** | Maximum CPU time in milliseconds |
+| **Memory limit** | Maximum RAM in kibibytes |
+| **Output limit** | Maximum bytes to stdout/stderr |
+| **Tags** | Classification tags for organization |
+
+## Creating ZIP Files
+
+<Steps>
+  <Step title="Prepare your files">
+    Organize all required files and folders according to the structure above.
+  </Step>
+
+  <Step title="Create the ZIP">
+    **On Linux/Mac:**
+    ```bash
+    zip -r myroblem.zip *
+    ```
+    
+    **On Windows:**
+    Select all files and folders, right-click, and choose "Compress to ZIP file".
+    
+    <Warning>
+      Ensure `/cases` and `/statements` folders are at the root of the ZIP, not inside intermediate folders.
+    </Warning>
+  </Step>
+
+  <Step title="Upload to omegaUp">
+    Navigate to [https://omegaup.com/problem/new/](https://omegaup.com/problem/new/) and upload your ZIP file.
+  </Step>
+</Steps>
+
+## Video Tutorials
+
+Learn manual problem creation:
+- [Part 1: Basic Setup](https://www.youtube.com/watch?v=LfyRSsgrvNc)
+- [Part 2: Advanced Topics](https://www.youtube.com/watch?v=i2aqXXOW5ic)
+
+## Common Errors
+
+<Warning>
+  **Case sensitivity matters!** 
+  - Folders must be named `cases` and `statements` (lowercase)
+  - Extensions must be `.in` and `.out` (lowercase)
+  - omegaUp runs on Linux where case matters
+</Warning>
+
+<Warning>
+  **ZIP structure issues**
+  - The `/cases` and `/statements` folders must be at the root of the ZIP
+  - Avoid intermediate folders that wrap your content
+</Warning>
+
+## Example Problems
+
+Explore example ZIP files used in omegaUp tests:
+
+[https://github.com/omegaup/omegaup/tree/master/frontend/tests/resources](https://github.com/omegaup/omegaup/tree/master/frontend/tests/resources)
+
+## Karel Problems
+
+<Info>
+  For Karel problems, use [karel.js](https://omegaup.com/karel.js/) to create and test your cases more easily.
+</Info>
+
+Karel problems follow the same ZIP structure but require special case generation. See the [Manual for ZIP File Creation](https://github.com/omegaup/omegaup/blob/main/frontend/www/docs/Manual-for-Zip-File-Creation-for-Problems.md) for detailed Karel instructions.
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Running Contests" icon="trophy" href="/guides/running-contests">
+    Learn how to use your problems in contests
+  </Card>
+  <Card title="Managing Courses" icon="graduation-cap" href="/guides/managing-courses">
+    Add problems to educational courses
+  </Card>
+</CardGroup>

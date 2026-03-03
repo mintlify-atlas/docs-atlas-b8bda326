@@ -1,0 +1,138 @@
+---
+title: Development Environment Setup
+description: Get started with omegaUp development using Docker
+---
+
+## Overview
+
+This guide will help you set up a complete omegaUp development environment using Docker. The setup includes all necessary components to run omegaUp locally and start contributing to the project.
+
+## Video Tutorial
+
+Watch the complete setup process:
+
+[![Videotutorial](http://img.youtube.com/vi/H1PG4Dvje88/0.jpg)](http://www.youtube.com/watch?v=H1PG4Dvje88 'OmegaUp Localhost Setup Video Tutorial')
+
+## Prerequisites
+
+Before starting, if you're not confident using Git, we recommend reading [this tutorial](https://github.com/shekhargulati/git-the-missing-tutorial).
+
+## Quick Start
+
+<Steps>
+  <Step title="Install Docker">
+    Install the [Docker engine](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository) and [Docker Compose 2](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually).
+    
+    If you're using WSL, follow the [official Docker Desktop WSL setup guide](https://docs.docker.com/desktop/features/wsl).
+  </Step>
+
+  <Step title="Configure Docker permissions (Linux)">
+    If you're running Linux, add your user to the docker group:
+    
+    ```bash
+    sudo usermod -a -G docker $USER
+    ```
+    
+    Log out and log back in for the changes to take effect.
+  </Step>
+
+  <Step title="Fork and clone the repository">
+    Fork the [omegaup/omegaup](https://github.com/omegaup/omegaup) repository, then clone it:
+    
+    ```bash
+    git clone --recurse-submodules https://github.com/YOURUSERNAME/omegaup
+    cd omegaup
+    ```
+  </Step>
+
+  <Step title="Initialize submodules">
+    If you didn't use `--recurse-submodules` when cloning, initialize the submodules:
+    
+    ```bash
+    git submodule update --init --recursive
+    ```
+  </Step>
+
+  <Step title="Start the development environment">
+    Pull and start the Docker containers:
+    
+    ```bash
+    docker-compose pull
+    docker-compose up
+    ```
+    
+    The first startup takes 2-10 minutes. You'll know it's ready when you see output similar to:
+    
+    ```
+    frontend_1     | Child frontend:
+    frontend_1     |        1550 modules
+    frontend_1     |     Child HtmlWebpackCompiler:
+    frontend_1     |            1 module
+    frontend_1     | Child style:
+    frontend_1     |        1 module
+    ```
+  </Step>
+
+  <Step title="Access omegaUp">
+    Open your browser and navigate to [http://localhost:8001](http://localhost:8001)
+  </Step>
+</Steps>
+
+## Test User Accounts
+
+The development environment comes with preconfigured test accounts:
+
+### Main Accounts
+
+- **omegaup** / **omegaup** - Admin user with sysadmin privileges
+- **user** / **user** - Regular user account
+
+### Test Users
+
+Additional test users are available for development and testing:
+
+| Username | Password |
+|----------|----------|
+| test_user_0 | test_user_0 |
+| test_user_1 | test_user_1 |
+| test_user_2 | test_user_2 |
+| test_user_3 | test_user_3 |
+| test_user_4 | test_user_4 |
+| test_user_5 | test_user_5 |
+| test_user_6 | test_user_6 |
+| test_user_7 | test_user_7 |
+| test_user_8 | test_user_8 |
+| test_user_9 | test_user_9 |
+| course_test_user_0 | course_test_user_0 |
+| course_test_user_1 | course_test_user_1 |
+| course_test_user_2 | course_test_user_2 |
+
+<Note>
+In development mode, email verification is disabled, so you can create additional users with dummy email addresses.
+</Note>
+
+## Codebase Structure
+
+omegaUp code is located at `/opt/omegaup` inside the container. Key directories:
+
+- **frontend/server/src/Controllers** - Business logic and server API
+- **frontend/server/libs** - Libraries and utilities
+- **frontend/server/src/DAO** - Data Access Objects and Value Objects for database operations
+- **frontend/templates** - Smarty templates and internationalization files
+- **frontend/www** - Complete website contents
+
+For more details, see the [Frontend documentation](https://github.com/omegaup/omegaup/blob/main/frontend/www/docs/Frontend.md).
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Docker Environment" icon="docker" href="/development/docker-environment">
+    Learn Docker commands and container management
+  </Card>
+  <Card title="Running Tests" icon="flask" href="/development/running-tests">
+    Set up and run tests locally
+  </Card>
+  <Card title="Making Changes" icon="code" href="https://github.com/omegaup/omegaup/blob/main/frontend/www/docs/How-to-Make-a-Pull-Request.md">
+    Learn how to contribute code changes
+  </Card>
+</CardGroup>
